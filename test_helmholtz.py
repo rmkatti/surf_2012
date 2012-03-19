@@ -35,7 +35,9 @@ def bars_3x3():
         idx = prob.choice(patterns.shape[0], p=p)[0]
         return patterns[idx]
 
-    G, G_bias, _ = helmholtz(world, (1, 6, 9))
+    G, G_bias, _ = helmholtz(world, (1, 6, 9),
+                             epsilon = (0.01, 0.01, 0.15),
+                             maxiter = 60000)
     gen_dist = estimate_generative_dist(G, G_bias)
     indices = np.argsort(-gen_dist)
     for i in indices[:patterns.shape[0]+2]:
