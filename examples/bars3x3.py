@@ -2,12 +2,12 @@
 import numpy as np
 
 # Local imports.
-from helmholtz import estimate_generative_dist, helmholtz
-import prob
-from util import bit_vector
+from neural.helmholtz import estimate_generative_dist, helmholtz
+from neural.prob import choice
+from neural.util import bit_vector
 
 
-def bars_3x3():
+def bars3x3():
     """ A world consisting of horizontal and vertical bars in a 3x3 grid.
 
     This example is used in Kevin Kirby's 'Tutorial on Helmholtz Machines'.
@@ -32,7 +32,7 @@ def bars_3x3():
     p /= p.sum()
 
     def world():
-        idx = prob.choice(patterns.shape[0], p=p)[0]
+        idx = choice(patterns.shape[0], p=p)[0]
         return patterns[idx]
 
     G, G_bias, _ = helmholtz(world, (1, 6, 9),
@@ -46,4 +46,4 @@ def bars_3x3():
 
 
 if __name__ == '__main__':
-    bars_3x3()
+    bars3x3()
