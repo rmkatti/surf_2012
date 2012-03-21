@@ -4,7 +4,6 @@ import numpy as np
 # Local imports.
 from neural.helmholtz import estimate_generative_dist, helmholtz
 from neural.prob import choice
-from neural.util import bit_vector
 
 
 def bars3x3():
@@ -38,10 +37,10 @@ def bars3x3():
     G, G_bias, _ = helmholtz(world, (1, 6, 9),
                              epsilon = (0.01, 0.01, 0.15),
                              maxiter = 60000)
-    gen_dist = estimate_generative_dist(G, G_bias)
-    indices = np.argsort(-gen_dist)
-    for i in indices[:patterns.shape[0]+2]:
-        print bit_vector(i, patterns.shape[1]), gen_dist[i]
+    samples, probs = estimate_generative_dist(G, G_bias)
+    idx = np.argsort(-probs)
+    for i in idx[:patterns.shape[0]+2]:
+        print samples[i], probs[i]
     return G, G_bias
 
 

@@ -7,7 +7,7 @@ import numpy as np
 
 # Local imports.
 from prob import sample_indicator
-from util import encode_bit_vector, sigmoid
+from util import count_bit_vectors, sigmoid
 
 
 def helmholtz(world, topology, epsilon=0.1, maxiter=50000):
@@ -61,8 +61,8 @@ def create_layered_network(topology):
 
 def estimate_generative_dist(G, G_bias, samples=100000):
     """ Estimate the probability distribution for the generative model by
-    sampling from the model. Returns an array of estimated probabilities,
-    indexed by the integer encoding of the sample data.
+    sampling from the model. Returns an array of unique generated patterns and
+    an array of the corresponding estimated probabilities.
     
     This function is for analysis and testing; it is not used in the Helmoltz
     machine algorithm.
@@ -73,10 +73,9 @@ def estimate_generative_dist(G, G_bias, samples=100000):
         d_ext = np.append(d, np.ones((d.shape[0],1)), axis=1)
         d = sample_indicator(sigmoid(np.dot(G_weights, d_ext.T).T))
     d = np.array(d, copy=0, dtype=int)
-    counts = np.bincount(encode_bit_vector(d))
-    probs = np.zeros(2 ** d.shape[1])
-    probs[:counts.size] = counts / float(d.shape[0])
-    return probs
+    unique_d, counts = count_bit_vectors(d)
+    probs = counts / float(d.shape[0])
+    return unique_d, probs
     
 def wake(world, G, G_bias, R, epsilon):
     # Sample data from the world.
