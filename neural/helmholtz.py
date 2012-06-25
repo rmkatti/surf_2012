@@ -10,7 +10,8 @@ from prob import sample_indicator
 from util import count_bit_vectors, sigmoid
 
 
-def helmholtz(world, topology, epsilon=0.1, maxiter=50000):
+def helmholtz(world, topology, epsilon=0.1, maxiter=50000, 
+              yield_at=1000, yield_call=None):
     """ Run a Helmoltz machine.
 
     Parameters:
@@ -34,6 +35,15 @@ def helmholtz(world, topology, epsilon=0.1, maxiter=50000):
 
     maxiter : int, optional
         The number the wake-sleep cycles to run.
+
+    yield_at: int, optional
+    yield_call : callable(G, G_bias, R), optional
+        If provided, the given function will be called periodically with the
+        current values of the generative and recognition distributions.
+
+    Returns:
+    --------
+    The generative and recognition distributions (G, G_bias, R).
     """
     G = create_layered_network(topology)
     G_bias = np.zeros(topology[0])
@@ -44,9 +54,13 @@ def helmholtz(world, topology, epsilon=0.1, maxiter=50000):
     else:
         epsilon = np.array(epsilon, copy=0)
 
+    next_yield = yield_at - 1 if yield_call else -1
     for i in xrange(maxiter):
         wake(world, G, G_bias, R, epsilon)
         sleep(G, G_bias, R, epsilon)
+        if next_yield == i:
+            next_yield += yield_at
+            yield_call(G, G_bias, R)
 
     return G, G_bias, R
 
@@ -59,7 +73,7 @@ def create_layered_network(topology):
         network.append(np.zeros((bottom, top + 1)))
     return network
 
-def estimate_generative_dist(G, G_bias, samples=100000):
+def estimate_generative_dist(G, G_bias, samples=10000):
     """ Estimate the probability distribution for the generative model by
     sampling from the model. Returns an array of unique generated patterns and
     an array of the corresponding estimated probabilities.
