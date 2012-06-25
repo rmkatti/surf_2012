@@ -1,4 +1,9 @@
+# System library imports.
 import numpy as np
+
+# Local imports.
+from util import count_bit_vectors
+
 
 def kl_divergence(p, q, epsilon=1e-6):
     """ Computes the Kullback-Leibler divergence D(p||q) between the
@@ -22,3 +27,13 @@ def sample_indicator(p):
     p = np.array(p, copy=0)
     return np.array(np.random.sample(p.shape) < p, 
                     dtype=np.float)
+
+def samples_to_dist(d):
+    """ Convert a sequence of samples to an estimated probability distribution.
+
+    Returns an array of unique samples and an array of the corresponding
+    estimated probabilities.
+    """
+    unique_d, counts = count_bit_vectors(d)
+    probs = counts / float(d.shape[0])
+    return unique_d, probs
