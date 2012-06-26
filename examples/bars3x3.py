@@ -34,14 +34,11 @@ def bars3x3():
     dist = rv_bit_vector(patterns, p)
 
     # Benchmark the HM on this distribution.
-    yield_at = 500
-    kl = benchmark_helmholtz(dist, (1, 6, 9),
-                             epsilon = (0.01, 0.01, 0.15),
-                             maxiter = 60000,
-                             yield_at = yield_at)
-    i = np.arange(1, len(kl)+1) * yield_at
+    iters, kl = benchmark_helmholtz(dist, (1, 6, 9),
+                                    epsilon = (0.01, 0.01, 0.15),
+                                    maxiter = 60000, yield_at = 500)
     plt.clf()
-    plt.plot(i, kl)
+    plt.plot(iters, kl)
     plt.xlabel('Iteration')
     plt.ylabel('KL Divergence')
     plt.show()

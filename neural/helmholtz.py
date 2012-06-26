@@ -37,7 +37,7 @@ def helmholtz(world, topology, epsilon=0.1, maxiter=50000,
         The number the wake-sleep cycles to run.
 
     yield_at: int, optional
-    yield_call : callable(G, G_bias, R), optional
+    yield_call : callable(iter, G, G_bias, R), optional
         If provided, the given function will be called periodically with the
         current values of the generative and recognition distributions.
 
@@ -54,13 +54,16 @@ def helmholtz(world, topology, epsilon=0.1, maxiter=50000,
     else:
         epsilon = np.array(epsilon, copy=0)
 
-    next_yield = yield_at - 1 if yield_call else -1
-    for i in xrange(maxiter):
+    if yield_call:
+        next_yield = yield_at
+        yield_call(0, G, G_bias, R)
+
+    for i in xrange(1, maxiter+1):
         wake(world, G, G_bias, R, epsilon)
         sleep(G, G_bias, R, epsilon)
-        if next_yield == i:
+        if yield_call and next_yield == i:
             next_yield += yield_at
-            yield_call(G, G_bias, R)
+            yield_call(i, G, G_bias, R)
 
     return G, G_bias, R
 
