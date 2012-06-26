@@ -3,7 +3,6 @@ import numpy as np
 
 # Local imports.
 from neural.helmholtz import estimate_generative_dist, helmholtz
-from neural.util import bit_vector
 
 
 def shifter():
@@ -25,7 +24,8 @@ def shifter():
     G, G_bias, _ = helmholtz(world, (2, 24, 4 * bits),
                              epsilon = (0.01, 0.01, 0.15),
                              maxiter = 60000)
-    samples, probs = estimate_generative_dist(G, G_bias)
+    gen_dist = estimate_generative_dist(G, G_bias)
+    samples, probs = gen_dist.support
     idx = np.argsort(-probs)
     for i in idx[:10]:
         print samples[i].reshape(4, bits), probs[i]

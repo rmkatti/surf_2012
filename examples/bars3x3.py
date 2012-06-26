@@ -1,9 +1,9 @@
 # System library imports.
 import numpy as np
-from scipy.stats import rv_discrete
 
 # Local imports.
 from neural.helmholtz import estimate_generative_dist, helmholtz
+from neural.prob import rv_bit_vector
 
 
 def bars3x3():
@@ -29,13 +29,14 @@ def bars3x3():
                    1, 1, 1, 1, 1, 1 ], # low probability
                  dtype=np.float)
     p /= p.sum()
-    dist = rv_discrete(name='bars3x3', values=(range(len(p)),p))
-    world = lambda: patterns[dist.rvs()]
+    dist = rv_bit_vector(patterns, p)
+    world = dist.rvs
 
     G, G_bias, _ = helmholtz(world, (1, 6, 9),
                              epsilon = (0.01, 0.01, 0.15),
                              maxiter = 60000)
-    samples, probs = estimate_generative_dist(G, G_bias)
+    gen_dist = estimate_generative_dist(G, G_bias)
+    samples, probs = gen_dist.support
     idx = np.argsort(-probs)
     for i in idx[:patterns.shape[0]+2]:
         print samples[i], probs[i]

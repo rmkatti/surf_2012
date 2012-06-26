@@ -1,13 +1,21 @@
 import numpy as np
 
-def bit_vector(n, l):
-    """ Convert a nonnegative integer 'n' to a binary array of length 'l'.
+def bit_vector_from_str(s):
+    """ Convert a string to a bit vector.
     """
-    if not np.isscalar(n):
-        n = np.array(n, copy=0)[:,np.newaxis]
-    # Note: For a general radix r, this is
-    #   return (n / r**np.arange(l-1,-1,-1)) % r.
-    return 1 & (n / 2**np.arange(l-1,-1,-1))
+    if np.isscalar(s):
+        return np.array(map(int, s))
+    s = np.array(s, copy=0)
+    length = len(s.flat[0])
+    v = s.view(dtype='|S1').reshape(s.shape + (length,))
+    return v.astype(int)
+
+def bit_vector_to_str(v):
+    """ Convert a bit vector to a string.
+    """
+    v = np.array(v, copy=0)
+    s = np.apply_along_axis(''.join, -1, v.astype(str))
+    return str(s) if s.shape == () else s
 
 def count_bit_vectors(v):
     """ Given an array of bit vectors, count the occurences of each vector.

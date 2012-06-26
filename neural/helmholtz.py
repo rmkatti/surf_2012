@@ -6,8 +6,8 @@ from itertools import izip
 import numpy as np
 
 # Local imports.
-from prob import sample_indicator, samples_to_dist
-from util import count_bit_vectors, sigmoid
+from prob import rv_bit_vector, sample_indicator
+from util import sigmoid
 
 
 def helmholtz(world, topology, epsilon=0.1, maxiter=50000, 
@@ -76,12 +76,9 @@ def sample_generative_dist(G, G_bias, n):
 
 def estimate_generative_dist(G, G_bias, samples=10000):
     """ Estimate the generative distribution by sampling.
-
-    Returns an array of unique generated patterns and an array of the
-    corresponding estimated probabilities.
     """
     d = sample_generative_dist(G, G_bias, samples)
-    return samples_to_dist(d)
+    return rv_bit_vector.from_samples(d)
 
 
 def create_layered_network(topology):
