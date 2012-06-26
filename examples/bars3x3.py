@@ -1,8 +1,9 @@
 # System library imports.
 import numpy as np
+import matplotlib.pyplot as plt
 
 # Local imports.
-from neural.helmholtz import estimate_generative_dist, helmholtz
+from neural.tests.helmholtz_test import benchmark_helmholtz
 from neural.prob import rv_bit_vector
 
 
@@ -11,6 +12,7 @@ def bars3x3():
 
     This example is used in Kevin Kirby's 'Tutorial on Helmholtz Machines'.
     """
+    # Construct the bars distribution.
     patterns = np.array([ # Vertical bars.
                           [0, 0, 1, 0, 0, 1, 0, 0, 1],
                           [0, 1, 1, 0, 1, 1, 0, 1, 1],
@@ -30,17 +32,19 @@ def bars3x3():
                  dtype=np.float)
     p /= p.sum()
     dist = rv_bit_vector(patterns, p)
-    world = dist.rvs
 
-    G, G_bias, _ = helmholtz(world, (1, 6, 9),
+    # Benchmark the HM on this distribution.
+    yield_at = 500
+    kl = benchmark_helmholtz(dist, (1, 6, 9),
                              epsilon = (0.01, 0.01, 0.15),
-                             maxiter = 60000)
-    gen_dist = estimate_generative_dist(G, G_bias)
-    samples, probs = gen_dist.support
-    idx = np.argsort(-probs)
-    for i in idx[:patterns.shape[0]+2]:
-        print samples[i], probs[i]
-    return G, G_bias
+                             maxiter = 60000,
+                             yield_at = yield_at)
+    i = np.arange(1, len(kl)+1) * yield_at
+    plt.clf()
+    plt.plot(i, kl)
+    plt.xlabel('Iteration')
+    plt.ylabel('KL Divergence')
+    plt.show()
 
 
 if __name__ == '__main__':

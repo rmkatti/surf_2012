@@ -6,7 +6,7 @@ import numpy as np
 from scipy.stats import rv_discrete
 
 # Local imports.
-from util import bit_vector_to_str, count_bit_vectors
+from util import bit_vector_to_str, bit_vector_from_str, count_bit_vectors
 
 
 class rv_bit_vector(object):
@@ -98,7 +98,7 @@ def kl_divergence(p_rv, q_rv, epsilon=1e-6):
     p = p[is_nonzero_p]
     q = q[is_nonzero_p]
 
-    q = np.max(q, epsilon)
+    q = np.maximum(q, epsilon)
     return np.sum(p * np.log(p/q))
 
 
