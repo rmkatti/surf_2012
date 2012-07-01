@@ -6,11 +6,12 @@ from neural.helmholtz import helmholtz, estimate_generative_dist
 from neural.prob import kl_divergence
 
 
-def benchmark_helmholtz(dist, topology, epsilon=0.1, maxiter=50000, 
-                        samples=10000, yield_at=1000):
+def benchmark_helmholtz(dist, topology, epsilon=None, maxiter=None, 
+                        samples=None, yield_at=None):
     """ Benchmark the Helmholtz machine on a known distribution.
     """
     iters, kl = [], []
+    samples = samples or 10000
     def update_kl(i, G, G_bias, R):
         gen_dist = estimate_generative_dist(G, G_bias, samples)
         iters.append(i)

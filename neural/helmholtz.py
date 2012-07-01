@@ -10,8 +10,8 @@ from prob import rv_bit_vector, sample_indicator
 from util import sigmoid
 
 
-def helmholtz(world, topology, epsilon=0.1, maxiter=50000, 
-              yield_at=1000, yield_call=None):
+def helmholtz(world, topology, epsilon=None, maxiter=None, 
+              yield_at=None, yield_call=None):
     """ Run a Helmoltz machine.
 
     Parameters:
@@ -28,15 +28,15 @@ def helmholtz(world, topology, epsilon=0.1, maxiter=50000,
         Note: the number of input nodes must coincide with the size of the bit
         vectors produced by the 'world' function.
         
-    epsilon : float or sequence of floats, optional
+    epsilon : float or sequence of floats, optional [default 0.01]
         The step size for the weight update rules. If a sequence is given, it
         must be of the same size as 'topology'; a different step size may then
         be used at each layer.
 
-    maxiter : int, optional
+    maxiter : int, optional [default 50000]
         The number the wake-sleep cycles to run.
 
-    yield_at: int, optional
+    yield_at: int, optional [default 1000]
     yield_call : callable(iter, G, G_bias, R), optional
         If provided, the given function will be called periodically with the
         current values of the generative and recognition distributions.
@@ -45,14 +45,17 @@ def helmholtz(world, topology, epsilon=0.1, maxiter=50000,
     --------
     The generative and recognition distributions (G, G_bias, R).
     """
-    G = create_layered_network(topology)
-    G_bias = np.zeros(topology[0])
-    R = create_layered_network(reversed(topology))
-
+    epsilon = epsilon or 0.01
     if np.isscalar(epsilon):
         epsilon = np.repeat(epsilon, len(topology))
     else:
         epsilon = np.array(epsilon, copy=0)
+    maxiter = maxiter or 50000
+    yield_at = yield_at or 1000
+
+    G = create_layered_network(topology)
+    G_bias = np.zeros(topology[0])
+    R = create_layered_network(reversed(topology))
 
     if yield_call:
         next_yield = yield_at
@@ -77,10 +80,10 @@ def sample_generative_dist(G, G_bias, n):
         d = sample_indicator(sigmoid(np.dot(G_weights, d_ext.T).T))
     return np.array(d, copy=0, dtype=int)
 
-def estimate_generative_dist(G, G_bias, samples=10000):
+def estimate_generative_dist(G, G_bias, n):
     """ Estimate the generative distribution by sampling.
     """
-    d = sample_generative_dist(G, G_bias, samples)
+    d = sample_generative_dist(G, G_bias, n)
     return rv_bit_vector.from_samples(d)
 
 

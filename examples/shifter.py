@@ -24,7 +24,7 @@ def shifter():
     G, G_bias, _ = helmholtz(world, (2, 24, 4 * bits),
                              epsilon = (0.01, 0.01, 0.15),
                              maxiter = 60000)
-    gen_dist = estimate_generative_dist(G, G_bias)
+    gen_dist = estimate_generative_dist(G, G_bias, n=10000)
     samples, probs = gen_dist.support
     idx = np.argsort(-probs)
     for i in idx[:10]:
