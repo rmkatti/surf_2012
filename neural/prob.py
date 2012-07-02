@@ -1,3 +1,6 @@
+""" Generic tools for probabilistic calculations, particularly over binary
+valued distributions.
+"""
 # Standard library imports.
 from itertools import chain, izip
 

@@ -70,6 +70,32 @@ def helmholtz(world, topology, epsilon=None, maxiter=None,
 
     return G, G_bias, R
 
+def estimate_coding_cost(G, G_bias, R, d, n = 10):
+    """ Estimate the expected coding cost of the data d by sampling the
+    recognition distribution.
+    """
+    costs = np.zeros(n)
+    samples = sample_recognition_dist(R, d, n)
+    
+    # Coding cost for hidden units.
+    prob = sigmoid(G_bias)
+    for G_weights, s in izip(G, samples):
+        costs += np.sum(-s*np.log(prob) - (1-s)*np.log(1-prob), axis=-1)
+        s_ext = np.append(s, np.ones((s.shape[0],1)), axis=1)
+        prob = sigmoid(np.dot(G_weights, s_ext.T).T)
+
+    # Coding cost for input data.
+    d_tiled = np.tile(d.astype(np.float_), (n,1))
+    costs += np.sum(-d_tiled*np.log(prob) - (1-d_tiled)*np.log(1-prob), axis=-1)
+
+    return costs.mean()
+        
+def estimate_generative_dist(G, G_bias, n = 10000):
+    """ Estimate the generative distribution by sampling.
+    """
+    d = sample_generative_dist(G, G_bias, n)
+    return rv_bit_vector.from_samples(d)
+
 def sample_generative_dist(G, G_bias, n):
     """ Sample the generative distribution.
     """
@@ -80,11 +106,18 @@ def sample_generative_dist(G, G_bias, n):
         d = sample_indicator(sigmoid(np.dot(G_weights, d_ext.T).T))
     return np.array(d, copy=0, dtype=int)
 
-def estimate_generative_dist(G, G_bias, n):
-    """ Estimate the generative distribution by sampling.
+def sample_recognition_dist(R, d, n):
+    """ Sample the recognition distribution for the given data.
+
+    Returns a list of sample arrays for the hidden units in top-to-bottom order.
     """
-    d = sample_generative_dist(G, G_bias, n)
-    return rv_bit_vector.from_samples(d)
+    s = np.tile(d, (n,1))
+    samples = []
+    for R_weights in R:
+        s_ext = np.append(s, np.ones((s.shape[0],1)), axis=1)
+        s = sample_indicator(sigmoid(np.dot(R_weights, s_ext.T).T))
+        samples.insert(0, s)
+    return samples
 
 
 def create_layered_network(topology):
