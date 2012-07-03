@@ -33,7 +33,10 @@ def count_bit_vectors(v):
 try:
     from _util import logistic, sigmoid
 except ImportError:
+
     def logistic(x):
         """ The standard logistic (sigmoid) function. """
         return 1 / (1 + np.exp(-x))
     sigmoid = logistic
+
+    print 'WARNING: Optimized math functions not available.'

@@ -1,5 +1,4 @@
 # Standard library imports.
-from collections import defaultdict
 from itertools import izip
 
 # System library imports.
@@ -9,6 +8,7 @@ import numpy as np
 from prob import rv_bit_vector, sample_indicator
 from util import sigmoid
 
+# Helmoltz machine public API
 
 def helmholtz(world, topology, epsilon=None, maxiter=None, 
               yield_at=None, yield_call=None):
@@ -119,6 +119,7 @@ def sample_recognition_dist(R, d, n):
         samples.insert(0, s)
     return samples
 
+# Helmholz machine internals
 
 def create_layered_network(topology):
     # Create a list of weight matrices for the given layered network topology.
@@ -128,6 +129,7 @@ def create_layered_network(topology):
         network.append(np.zeros((bottom, top + 1)))
     return network
     
+# Reference/fallback implementation
 def wake(world, G, G_bias, R, epsilon):
     # Sample data from the world.
     s = world()
@@ -146,6 +148,7 @@ def wake(world, G, G_bias, R, epsilon):
         generated = sigmoid(np.dot(G_weights, inputs))
         G_weights += step * np.outer(target - generated, inputs)
 
+# Reference/fallback implementation
 def sleep(G, G_bias, R, epsilon):
     # Begin dreaming!
     d = sample_indicator(sigmoid(G_bias))
@@ -162,3 +165,8 @@ def sleep(G, G_bias, R, epsilon):
         inputs = np.append(inputs, 1)
         recognized = sigmoid(np.dot(R_weights, inputs))
         R_weights += step * np.outer(target - recognized, inputs)
+
+try:
+    from _helmholtz import wake, sleep
+except ImportError:
+    print 'WARNING: Optimized HM not available.'
