@@ -29,7 +29,11 @@ def count_bit_vectors(v):
     unique_v = v[idx]
     counts = np.diff(np.append(idx, v.shape[0]))
     return unique_v, counts
-    
-def sigmoid(x):
-    """ The standard sigmoid function. """
-    return 1 / (1 + np.exp(-x))
+
+try:
+    from _util import logistic, sigmoid
+except ImportError:
+    def logistic(x):
+        """ The standard logistic (sigmoid) function. """
+        return 1 / (1 + np.exp(-x))
+    sigmoid = logistic
