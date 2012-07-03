@@ -1,3 +1,6 @@
 *.egg-info
+*.c
 *.pyc
+*.so
+build/
 examples/digits/data/
