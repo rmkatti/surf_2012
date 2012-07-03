@@ -56,7 +56,8 @@ cdef _ufuncs_add_def(void *data, PyUFuncGenericFunction function,
         _ufuncs_s_set += 1
 
 
-cdef register_ufunc_d(double d(double), char *name, char *doc, int identity):
+cdef register_ufunc_d(double d(double), char *name, char *doc,
+        int identity = PyUFunc_None):
     cdef:
         PyUFuncGenericFunction *functions = &_ufuncs_functions[_ufuncs_set]
         void* *data = &_ufuncs_data[_ufuncs_set]
@@ -67,7 +68,7 @@ cdef register_ufunc_d(double d(double), char *name, char *doc, int identity):
                 identity, name, doc, 0)
 
 cdef register_ufunc_fd(float f(float), double d(double),
-        char *name, char *doc, int identity):
+        char *name, char *doc, int identity = PyUFunc_None):
     cdef:
         PyUFuncGenericFunction *functions = &_ufuncs_functions[_ufuncs_set]
         void* *data = &_ufuncs_data[_ufuncs_set]
@@ -78,7 +79,8 @@ cdef register_ufunc_fd(float f(float), double d(double),
                 identity, name, doc, 0)
 
 cdef register_ufunc_fdg(float f(float), double d(double),
-        long double g(long double), char *name, char *doc, int identity):
+        long double g(long double), char *name, char *doc, 
+        int identity = PyUFunc_None):
     cdef:
         PyUFuncGenericFunction *functions = &_ufuncs_functions[_ufuncs_set]
         void* *data = &_ufuncs_data[_ufuncs_set]
@@ -90,7 +92,7 @@ cdef register_ufunc_fdg(float f(float), double d(double),
                 identity, name, doc, 0)
 
 cdef register_ufunc_dd(double dd(double, double),
-        char *name, char *doc, int identity):
+        char *name, char *doc, int identity = PyUFunc_None):
     cdef:
         PyUFuncGenericFunction *functions = &_ufuncs_functions[_ufuncs_set]
         void* *data = &_ufuncs_data[_ufuncs_set]
@@ -101,7 +103,7 @@ cdef register_ufunc_dd(double dd(double, double),
                 identity, name, doc, 0)
 
 cdef register_ufunc_ffdd(float ff(float, float), double dd(double, double),
-        char *name, char *doc, int identity):
+        char *name, char *doc, int identity = PyUFunc_None):
     cdef:
         PyUFuncGenericFunction *functions = &_ufuncs_functions[_ufuncs_set]
         void* *data = &_ufuncs_data[_ufuncs_set]
@@ -113,7 +115,7 @@ cdef register_ufunc_ffdd(float ff(float, float), double dd(double, double),
 
 cdef register_ufunc_ffddgg(float ff(float, float), double dd(double, double),
         long double gg(long double, long double),
-        char *name, char *doc, int identity):
+        char *name, char *doc, int identity = PyUFunc_None):
     cdef:
         PyUFuncGenericFunction *functions = &_ufuncs_functions[_ufuncs_set]
         void* *data = &_ufuncs_data[_ufuncs_set]

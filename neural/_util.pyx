@@ -14,5 +14,5 @@ doc = '''\
 The standard logistic (sigmoid) function, the inverse of the logit (log odds)
 function.
 '''
-logistic = register_ufunc_fd(logistic_f, logistic_d, "logistic", doc, PyUFunc_None)
+logistic = register_ufunc_fd(logistic_f, logistic_d, "logistic", doc)
 sigmoid = logistic
