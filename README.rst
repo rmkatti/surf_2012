@@ -18,8 +18,9 @@ following additional packages are required:
 * BLAS (including headers)
 * GSL (including headers)
 
-Finally, some of the examples require matplotlib. Note that older versions of
-the indicated packages may work, but they have not been tested.
+Finally, some of the examples have additional dependencies:
 
+* matplotlib 1.1
 
-
+Note that older versions of the indicated packages may work, but they have not
+been tested.

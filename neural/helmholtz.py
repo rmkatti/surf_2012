@@ -79,13 +79,13 @@ def estimate_coding_cost(G, G_bias, R, d, n = 10):
     # Coding cost for hidden units.
     prob = sigmoid(G_bias)
     for G_weights, s in izip(G, samples):
-        costs += np.sum(-s*np.log(prob) - (1-s)*np.log(1-prob), axis=-1)
+        costs += np.sum(-s*np.log(prob) - (1-s)*np.log(1-prob), axis=1)
         s_ext = np.append(s, np.ones((s.shape[0],1)), axis=1)
         prob = sigmoid(np.dot(G_weights, s_ext.T).T)
 
     # Coding cost for input data.
     d_tiled = np.tile(d.astype(float), (n,1))
-    costs += np.sum(-d_tiled*np.log(prob) - (1-d_tiled)*np.log(1-prob), axis=-1)
+    costs += np.sum(-d_tiled*np.log(prob) - (1-d_tiled)*np.log(1-prob), axis=1)
 
     return costs.mean()
         

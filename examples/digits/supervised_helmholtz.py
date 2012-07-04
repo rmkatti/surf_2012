@@ -11,21 +11,18 @@ from mnist import read_mnist
 
 def train(data_path = None):
     imgs, labels = read_mnist(path=data_path, training=True)
-    imgs = imgs.astype(float) / 255
-    imgs = imgs.reshape((imgs.shape[0], 28*28))
-
+    imgs = prepare_imgs(imgs)
     machines = [ None ] * 10
     for digit in xrange(10):
         world = shuffled_iter(imgs[labels == digit])
-        machines[digit] = helmholtz(world.next, topology = (16, 32, 32, 28*28),
+        machines[digit] = helmholtz(world.next, 
+                                    topology = (16, 64, 64, 28*28),
                                     epsilon = 0.01, maxiter = 50000)
     return machines
 
-
 def test(machines, data_path = None):
     imgs, labels = read_mnist(path=data_path, training=False)
-    imgs /= 128
-    imgs = imgs.reshape((imgs.shape[0], 28*28))
+    imgs = prepare_imgs(imgs)
 
     # For testing only 0's and 1's.
     #sel = np.logical_or(labels == 0, labels == 1)
@@ -40,6 +37,11 @@ def test(machines, data_path = None):
         errors += label != np.argmin(costs)
     return float(errors) / len(imgs)
 
+
+def prepare_imgs(imgs):
+    imgs = imgs.reshape((imgs.shape[0], 28*28)).astype(float)
+    imgs /= 255.0
+    return np.round(imgs, out=imgs)
 
 def shuffled_iter(items):
     items = np.array(items)
