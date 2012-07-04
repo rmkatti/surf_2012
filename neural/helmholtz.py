@@ -5,8 +5,7 @@ from itertools import izip
 import numpy as np
 
 # Local imports.
-from prob import rv_bit_vector, sample_indicator
-from util import sigmoid
+from util import sample_indicator, sigmoid
 
 # Helmoltz machine public API
 
@@ -93,6 +92,7 @@ def estimate_coding_cost(G, G_bias, R, d, n = 10):
 def estimate_generative_dist(G, G_bias, n = 10000):
     """ Estimate the generative distribution by sampling.
     """
+    from prob import rv_bit_vector
     d = sample_generative_dist(G, G_bias, n)
     return rv_bit_vector.from_samples(d)
 
