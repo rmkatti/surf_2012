@@ -105,8 +105,9 @@ def kl_divergence(p_rv, q_rv, epsilon=1e-6):
     return np.sum(p * np.log(p/q))
 
 
-def sample_indicator(p):
+def sample_indicator(p, out=None):
     """ Yields 1 with probability p and 0 with probability 1-p. """
     p = np.array(p, copy=0)
-    return np.array(np.random.sample(p.shape) < p, 
-                    dtype=np.float)
+    if out is None:
+        out = np.ndarray(p.shape, dtype=float)
+    return np.less(np.random.sample(p.shape), p, out)

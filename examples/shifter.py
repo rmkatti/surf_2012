@@ -16,7 +16,7 @@ def shifter():
     bits = 8
     def world():
         shift = 1 if np.random.sample() < 0.5 else -1
-        bottom = np.array(np.random.sample(bits) < 0.2, dtype=np.int)
+        bottom = np.array(np.random.sample(bits) < 0.2, dtype=int)
         top = np.roll(bottom, shift)
         image = np.vstack((top, top, bottom, bottom))
         return image.flatten()

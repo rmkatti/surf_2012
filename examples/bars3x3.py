@@ -29,7 +29,7 @@ def bars3x3():
                           [1, 1, 1, 0, 0, 0, 0, 0, 0] ])
     p = np.array([ 2, 2, 2, 2, 2, 2,   # high probability
                    1, 1, 1, 1, 1, 1 ], # low probability
-                 dtype=np.float)
+                 dtype=float)
     p /= p.sum()
     dist = rv_bit_vector(patterns, p)
 

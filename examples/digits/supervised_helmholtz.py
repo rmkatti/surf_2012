@@ -11,7 +11,7 @@ from mnist import read_mnist
 
 def train(data_path = None):
     imgs, labels = read_mnist(path=data_path, training=True)
-    imgs = imgs.astype(np.float_) / 255
+    imgs = imgs.astype(float) / 255
     imgs = imgs.reshape((imgs.shape[0], 28*28))
 
     machines = [ None ] * 2

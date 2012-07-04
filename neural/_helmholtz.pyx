@@ -16,7 +16,7 @@ def wake(world, G, G_bias, R, epsilon):
     # Pass sensory data upwards through the recognition network.
     for R_weights in R:
         out = np.ones(R_weights.shape[0] + 1)
-        out[:-1] = sample_indicator(sigmoid(tokyo.dgemv(R_weights, s)))
+        sample_indicator(sigmoid(tokyo.dgemv(R_weights, s)), out[:-1])
         s = out
         samples.insert(0, s)
         
@@ -31,13 +31,13 @@ def wake(world, G, G_bias, R, epsilon):
 def sleep(G, G_bias, R, epsilon):
     # Begin dreaming!
     d = np.ones(G_bias.size + 1)
-    d[:-1] = sample_indicator(sigmoid(G_bias))
+    sample_indicator(sigmoid(G_bias), d[:-1])
     dreams = [ d ]
 
     # Pass dream data down through the generation network.
     for G_weights in G:
         out = np.ones(G_weights.shape[0] + 1)
-        out[:-1] = sample_indicator(sigmoid(tokyo.dgemv(G_weights, d)))
+        sample_indicator(sigmoid(tokyo.dgemv(G_weights, d)), out[:-1])
         d = out
         dreams.insert(0, d)
 
