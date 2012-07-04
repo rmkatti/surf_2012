@@ -14,8 +14,8 @@ def train(data_path = None):
     imgs = imgs.astype(float) / 255
     imgs = imgs.reshape((imgs.shape[0], 28*28))
 
-    machines = [ None ] * 2
-    for digit in xrange(2):
+    machines = [ None ] * 10
+    for digit in xrange(10):
         world = shuffled_iter(imgs[labels == digit])
         machines[digit] = helmholtz(world.next, topology = (16, 32, 32, 28*28),
                                     epsilon = 0.01, maxiter = 50000)
@@ -27,9 +27,10 @@ def test(machines, data_path = None):
     imgs /= 128
     imgs = imgs.reshape((imgs.shape[0], 28*28))
 
-    sel = np.logical_or(labels == 0, labels == 1)
-    imgs = imgs[sel]
-    labels = labels[sel]
+    # For testing only 0's and 1's.
+    #sel = np.logical_or(labels == 0, labels == 1)
+    #imgs = imgs[sel]
+    #labels = labels[sel]
 
     costs = np.zeros(len(machines))
     errors = 0
