@@ -1,4 +1,5 @@
 # Standard library imports.
+from collections import namedtuple
 from itertools import izip
 
 # System library imports.
@@ -7,11 +8,14 @@ import numpy as np
 # Local imports.
 from util import sample_indicator, sigmoid
 
-# Helmoltz machine public API
+# Data types.
+HelmholtzMachine = namedtuple('HelmholtzMachine', ['G', 'G_bias', 'R'])
+
+# Helmholtz machine public API
 
 def helmholtz(world, topology, epsilon=None, maxiter=None, 
               yield_at=None, yield_call=None):
-    """ Run a Helmoltz machine.
+    """ Train a Helmholtz machine.
 
     Parameters:
     -----------
@@ -42,7 +46,8 @@ def helmholtz(world, topology, epsilon=None, maxiter=None,
 
     Returns:
     --------
-    The generative and recognition distributions (G, G_bias, R).
+    The generative and recognition distributions as the named tuple
+    HelmholtzMachine(G, G_bias, R).
     """
     epsilon = epsilon or 0.01
     if np.isscalar(epsilon):
@@ -67,7 +72,7 @@ def helmholtz(world, topology, epsilon=None, maxiter=None,
             next_yield += yield_at
             yield_call(i, G, G_bias, R)
 
-    return G, G_bias, R
+    return HelmholtzMachine(G, G_bias, R)
 
 def estimate_coding_cost(G, G_bias, R, d, n = 10):
     """ Estimate the expected coding cost of the data d by sampling the
@@ -96,15 +101,22 @@ def estimate_generative_dist(G, G_bias, n = 10000):
     d = sample_generative_dist(G, G_bias, n)
     return rv_bit_vector.from_samples(d)
 
-def sample_generative_dist(G, G_bias, n):
+def sample_generative_dist(G, G_bias, n, all_layers = False):
     """ Sample the generative distribution.
+
+    By default, returns an array of input unit samples. If 'all_layers` is True,
+    returns a list of sample arrays for all the layers, in top-to-bottom order.
     """
     G_bias_tiled = np.tile(G_bias, (n,1))
     d = sample_indicator(sigmoid(G_bias_tiled))
+    if all_layers:
+        samples = [ d ]
     for G_weights in G:
         d_ext = np.append(d, np.ones((d.shape[0],1)), axis=1)
         d = sample_indicator(sigmoid(np.dot(G_weights, d_ext.T).T))
-    return np.array(d, copy=0, dtype=int)
+        if all_layers:
+            samples.append(d)
+    return samples if all_layers else np.array(d, copy=0, dtype=int) 
 
 def sample_recognition_dist(R, d, n):
     """ Sample the recognition distribution for the given data.
