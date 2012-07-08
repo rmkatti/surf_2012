@@ -18,7 +18,13 @@ following additional packages are required:
 * BLAS (including headers)
 * GSL (including headers)
 
-Finally, some of the examples have additional dependencies:
+The UI layer requires libraries from ETS 4.2:
+
+* Traits
+* Traits UI
+* Chaco
+
+Finally, some of the examples have additional miscellaneous dependencies:
 
 * matplotlib 1.1
 
