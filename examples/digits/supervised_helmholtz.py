@@ -9,11 +9,12 @@ from neural.helmholtz import helmholtz, estimate_coding_cost
 from mnist import read_mnist
 
 
-def train(data_path = None):
+def train(digits = None, data_path = None):
+    digits = digits or range(10)
     imgs, labels = read_mnist(path=data_path, training=True)
     imgs = prepare_imgs(imgs)
-    machines = [ None ] * 10
-    for digit in xrange(10):
+    machines = {}
+    for digit in digits:
         world = shuffled_iter(imgs[labels == digit])
         machines[digit] = helmholtz(world.next, 
                                     topology = (16, 64, 64, 28*28),
@@ -22,17 +23,14 @@ def train(data_path = None):
 
 def test(machines, data_path = None):
     imgs, labels = read_mnist(path=data_path, training=False)
-    imgs = prepare_imgs(imgs)
+    idx = np.in1d(labels, machines.keys())
+    imgs = prepare_imgs(imgs[idx])
+    labels = labels[idx]
 
-    # For testing only 0's and 1's.
-    #sel = np.logical_or(labels == 0, labels == 1)
-    #imgs = imgs[sel]
-    #labels = labels[sel]
-
-    costs = np.zeros(len(machines))
+    costs = np.repeat(np.inf, 10)
     errors = 0
     for img, label in izip(imgs, labels):
-        for i, (G, G_bias, R) in enumerate(machines):
+        for i, (G, G_bias, R) in machines.iteritems():
             costs[i] = estimate_coding_cost(G, G_bias, R, img, n=10)
         errors += label != np.argmin(costs)
     return float(errors) / len(imgs)
