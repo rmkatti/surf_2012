@@ -26,7 +26,7 @@ function.
 sigmoid = logistic
 
 cdef double sample_indicator_d(double p):
-    return 0.0 if gsl_rng_uniform(rng) < p else 1.0
+    return 1.0 if gsl_rng_uniform(rng) < p else 0.0
 
 sample_indicator = register_ufunc_d(sample_indicator_d, 'sample_indicator', '''\
 Yields 1.0 with probability x and 0.0 with probability 1-x.
