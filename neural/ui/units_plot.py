@@ -1,5 +1,5 @@
 # System library imports.
-from traits.api import Array, Bool, List, Float, HasTraits, Instance, \
+from traits.api import Array, Bool, List, HasTraits, Instance, Int, \
     on_trait_change
 from traitsui.api import Item, View
 from enable.api import BaseTool, Component, ComponentEditor
@@ -12,7 +12,7 @@ class UnitsPlot(HasTraits):
     editable = Bool(False)
 
     layers = List(Array)
-    pixel_size = Float(25.0)
+    pixel_size = Int(25)
 
     plot = Instance(Component)
     traits_view = View(Item('plot',
@@ -20,7 +20,7 @@ class UnitsPlot(HasTraits):
                             show_label = False),
                        resizable = True)
 
-    @on_trait_change('editable, layers')
+    @on_trait_change('editable, layers, pixel_size')
     def rebuild_plot(self):
         container = VFitPlotContainer(bgcolor = 'lightgray',
                                       halign = 'center',
@@ -30,6 +30,7 @@ class UnitsPlot(HasTraits):
             plot = Plot(data,
                         width = layer.shape[1] * self.pixel_size,
                         height = layer.shape[0] * self.pixel_size,
+                        padding = self.pixel_size,
                         resizable = '')
             plot.x_axis.visible = False
             plot.y_axis.visible = False

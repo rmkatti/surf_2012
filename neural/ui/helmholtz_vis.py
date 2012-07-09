@@ -1,7 +1,7 @@
 # System library imports
 import numpy as np
-from traits.api import Button, Enum, HasTraits, Instance, Int, List, Tuple, \
-    on_trait_change
+from traits.api import Button, Enum, DelegatesTo, HasTraits, Instance, Int, \
+    List, Tuple, on_trait_change
 from traitsui.api import View, HGroup, VGroup, Item, Label, EnumEditor, spring
 
 # Local imports
@@ -14,6 +14,7 @@ class HelmholtzVis(HasTraits):
 
     machine = Instance(HelmholtzMachine)
     layer_shapes = List(Tuple(Int, Int))
+    pixel_size = DelegatesTo('plot')
 
     model = Enum('generative', 'recognition')
 
