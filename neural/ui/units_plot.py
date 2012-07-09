@@ -2,7 +2,7 @@
 from traits.api import Array, Bool, List, Float, HasTraits, Instance, \
     on_trait_change
 from traitsui.api import Item, View
-from enable.api import BaseTool, ComponentEditor
+from enable.api import BaseTool, Component, ComponentEditor
 from chaco.api import ArrayPlotData, ImagePlot, Plot, VPlotContainer
 import chaco.default_colormaps as cm
 
@@ -14,7 +14,7 @@ class UnitsPlot(HasTraits):
     layers = List(Array)
     pixel_size = Float(25.0)
 
-    plot = Instance(VPlotContainer)
+    plot = Instance(Component)
     traits_view = View(Item('plot',
                             editor = ComponentEditor(),
                             show_label = False),
@@ -22,10 +22,9 @@ class UnitsPlot(HasTraits):
 
     @on_trait_change('editable, layers')
     def rebuild_plot(self):
-        container = VPlotContainer(bgcolor = 'lightgray',
-                                   fit_components = 'hv',
-                                   halign = 'center', 
-                                   stack_order = 'top_to_bottom')
+        container = VFitPlotContainer(bgcolor = 'lightgray',
+                                      halign = 'center',
+                                      stack_order = 'top_to_bottom')
         for layer in self.layers:
             data = ArrayPlotData(image = layer)
             plot = Plot(data,
@@ -72,6 +71,22 @@ class UnitToggleTool(BaseTool):
                 if image_data.data[y_idx, x_idx] != val:
                     image_data.data[y_idx, x_idx] = val
                     image_data.data_changed = True
+
+
+class VFitPlotContainer(VPlotContainer):
+    """ A VPlotContainer that fits its components but uses extra space if
+    available.
+    """
+
+    # Container interface
+    fit_components = 'hv'
+
+    def get_preferred_size(self, components=None):
+        size = super(VPlotContainer, self).get_preferred_size()
+        size = (max(self.outer_bounds[0], size[0]), 
+                max(self.outer_bounds[1], size[1]))
+        self._cached_preferred_size = size
+        return size
                 
 
 if __name__ == '__main__':
