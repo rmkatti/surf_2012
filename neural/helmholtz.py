@@ -101,14 +101,36 @@ def estimate_generative_dist(G, G_bias, n = 10000):
     d = sample_generative_dist(G, G_bias, n)
     return rv_bit_vector.from_samples(d)
 
-def sample_generative_dist(G, G_bias, n, all_layers = False):
+def sample_generative_dist(G, G_bias, n, all_layers = False, top_units = None):
     """ Sample the generative distribution.
 
-    By default, returns an array of input unit samples. If 'all_layers` is True,
-    returns a list of sample arrays for all the layers, in top-to-bottom order.
+    Parameters:
+    -----------
+    G, G_bias : array
+        The generative weights and biases.
+    
+    n : int
+        The number of sample to draw.
+
+    all_layers : bool, optional [default False]
+        By default, an array of input unit samples is returned. If 'all_layers`
+        is True, a list of sample arrays for *all* the layers, in top-to-bottom
+        order, is returned instead.
+
+    top_units : bit vector, optional
+        By default, the top-level units are sampled from the generative
+        biases. This parameter clamps the top-level units to specific values.
+
+    Returns:
+    --------
+    A (list of) 2D sample array(s), where the first dimension indexes the
+    individual samples. See 'all_layers' parameter.
     """
-    G_bias_tiled = np.tile(G_bias, (n,1))
-    d = sample_indicator(sigmoid(G_bias_tiled))
+    if top_units is None:
+        G_bias_tiled = np.tile(G_bias, (n,1))
+        d = sample_indicator(sigmoid(G_bias_tiled))
+    else:
+        d = np.tile(top_units, (n,1))
     if all_layers:
         samples = [ d ]
     for G_weights in G:
@@ -121,7 +143,10 @@ def sample_generative_dist(G, G_bias, n, all_layers = False):
 def sample_recognition_dist(R, d, n):
     """ Sample the recognition distribution for the given data.
 
-    Returns a list of sample arrays for the hidden units in top-to-bottom order.
+    Returns:
+    --------
+    A list of 2D sample arrays for the hidden units, in top-to-bottom order.
+    The first dimension indexes the individual samples.
     """
     s = np.tile(d, (n,1))
     samples = []

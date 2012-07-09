@@ -1,22 +1,22 @@
 # System library imports
 import numpy as np
-from traits.api import Button, Enum, DelegatesTo, HasTraits, Instance, Int, \
-    List, Tuple, on_trait_change
+from traits.api import Any, Bool, Button, Enum, DelegatesTo, HasTraits, \
+    Instance, Int, List, Tuple, on_trait_change
 from traitsui.api import View, HGroup, VGroup, Item, Label, EnumEditor, spring
 
 # Local imports
-from neural.helmholtz import HelmholtzMachine, sample_generative_dist, \
-    sample_recognition_dist
+from neural.helmholtz import sample_generative_dist, sample_recognition_dist
 from units_plot import UnitsPlot
 
 
 class HelmholtzVis(HasTraits):
 
-    machine = Instance(HelmholtzMachine)
+    machine = Any # Instance(HelmholtzMachine)
     layer_shapes = List(Tuple(Int, Int))
     pixel_size = DelegatesTo('plot')
 
     model = Enum('generative', 'recognition')
+    clamp_top_units = Bool(False)
 
     plot = Instance(UnitsPlot)
     sample_button = Button(label='Sample!')
@@ -30,6 +30,10 @@ class HelmholtzVis(HasTraits):
                                  Item('model',
                                       editor = model_editor,
                                       show_label = False)),
+                          HGroup(Label('Clamp top-level units?'),
+                                 Item('clamp_top_units',
+                                      show_label = False),
+                                 visible_when = "model == 'generative'"),
                           spring,
                           Item('sample_button'),
                           show_labels = False),
@@ -48,12 +52,16 @@ class HelmholtzVis(HasTraits):
     def sample(self):
         machine = self.machine
         if self.model == 'generative':
+            data = None
+            if self.clamp_top_units:
+                data = self.plot.layers[0].flatten()
             layers = sample_generative_dist(machine.G, machine.G_bias, 1, 
-                                            all_layers=True)
+                                            all_layers=True, top_units=data)
         elif self.model == 'recognition':
             data = self.plot.layers[-1].flatten()
             hidden = sample_recognition_dist(machine.R, data, 1)
             layers = hidden + [ data ]
+        
         for layer, shape in zip(layers, self.layer_shapes):
             layer.shape = shape
         self.plot.layers = layers
