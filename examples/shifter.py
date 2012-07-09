@@ -14,6 +14,7 @@ from neural.helmholtz import estimate_generative_dist, helmholtz
 # Constants.
 shifter_bits = 8
 
+
 def train_shifter():
     def world():
         shift = 1 if np.random.sample() < 0.5 else -1
@@ -34,6 +35,12 @@ def estimate_most_probable(machine, n=10):
 
 
 if __name__ == '__main__':
+    from neural.ui.helmholtz_vis import HelmholtzVis
+
     machine = train_shifter()
-    for sample, prob in estimate_most_probable(machine):
-        print sample.reshape(4, shifter_bits), prob
+    #for sample, prob in estimate_most_probable(machine):
+    #    print sample.reshape(4, shifter_bits), prob
+
+    vis = HelmholtzVis(machine = machine, 
+                       layer_shapes = [(1,2), (3,8), (4, shifter_bits)])
+    vis.configure_traits()

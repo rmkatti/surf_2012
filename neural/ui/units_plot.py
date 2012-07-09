@@ -21,7 +21,7 @@ class UnitsPlot(HasTraits):
     def rebuild_plot(self):
         container = VPlotContainer(bgcolor = 'lightgray',
                                    fit_components = 'hv',
-                                   halign = "center", 
+                                   halign = 'center', 
                                    stack_order = 'top_to_bottom')
         for layer in self.layers:
             data = ArrayPlotData(image = layer)
@@ -29,9 +29,12 @@ class UnitsPlot(HasTraits):
                         width = layer.shape[1] * self.pixel_size,
                         height = layer.shape[0] * self.pixel_size,
                         resizable = '')
-            plot.img_plot("image", colormap = cm.gray)
             plot.x_axis.visible = False
             plot.y_axis.visible = False
+            renderer = plot.img_plot(
+                'image', colormap = cm.gray, origin = 'top left')[0]
+            renderer.color_mapper.range.low_setting = 0.0
+            renderer.color_mapper.range.high_setting = 1.0
             container.add(plot)
         self.plot = container
 

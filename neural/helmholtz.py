@@ -131,7 +131,7 @@ def sample_recognition_dist(R, d, n):
         samples.insert(0, s)
     return samples
 
-# Helmholz machine internals
+# Helmholtz machine internals
 
 def create_layered_network(topology):
     # Create a list of weight matrices for the given layered network topology.
