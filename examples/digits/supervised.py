@@ -7,12 +7,13 @@ import numpy as np
 # Local imports.
 from neural.helmholtz import helmholtz, estimate_coding_cost
 from mnist import read_mnist
+from util import prepare_mnist_images, shuffled_iter
 
 
 def train(digits = None, data_path = None):
     digits = digits or range(10)
     imgs, labels = read_mnist(path=data_path, training=True)
-    imgs = prepare_imgs(imgs)
+    imgs = prepare_mnist_images(imgs)
     machines = {}
     for digit in digits:
         world = shuffled_iter(imgs[labels == digit])
@@ -24,7 +25,7 @@ def train(digits = None, data_path = None):
 def test(machines, data_path = None):
     imgs, labels = read_mnist(path=data_path, training=False)
     idx = np.in1d(labels, machines.keys())
-    imgs = prepare_imgs(imgs[idx])
+    imgs = prepare_mnist_images(imgs[idx])
     labels = labels[idx]
 
     costs = np.repeat(np.inf, 10)
@@ -34,19 +35,6 @@ def test(machines, data_path = None):
             costs[i] = estimate_coding_cost(G, G_bias, R, img, n=10)
         errors += label != np.argmin(costs)
     return float(errors) / len(imgs)
-
-
-def prepare_imgs(imgs):
-    imgs = imgs.reshape((imgs.shape[0], 28*28)).astype(float)
-    imgs /= 255.0
-    return np.round(imgs, out=imgs)
-
-def shuffled_iter(items):
-    items = np.array(items)
-    while True:
-        np.random.shuffle(items)
-        for item in items:
-            yield item
 
 
 if __name__ == '__main__':
