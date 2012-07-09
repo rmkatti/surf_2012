@@ -1,12 +1,15 @@
 # System library imports.
-from traits.api import Array, List, Float, HasTraits, Instance, on_trait_change
+from traits.api import Array, Bool, List, Float, HasTraits, Instance, \
+    on_trait_change
 from traitsui.api import Item, View
-from enable.api import ComponentEditor
-from chaco.api import ArrayPlotData, Plot, VPlotContainer
+from enable.api import BaseTool, ComponentEditor
+from chaco.api import ArrayPlotData, ImagePlot, Plot, VPlotContainer
 import chaco.default_colormaps as cm
 
 
 class UnitsPlot(HasTraits):
+
+    editable = Bool(False)
 
     layers = List(Array)
     pixel_size = Float(25.0)
@@ -17,7 +20,7 @@ class UnitsPlot(HasTraits):
                             show_label = False),
                        resizable = True)
 
-    @on_trait_change('layers')
+    @on_trait_change('editable, layers')
     def rebuild_plot(self):
         container = VPlotContainer(bgcolor = 'lightgray',
                                    fit_components = 'hv',
@@ -31,13 +34,45 @@ class UnitsPlot(HasTraits):
                         resizable = '')
             plot.x_axis.visible = False
             plot.y_axis.visible = False
-            renderer = plot.img_plot(
+
+            # Specify color range manually to handle case of all 0's or 1's.
+            img_plot = plot.img_plot(
                 'image', colormap = cm.gray, origin = 'top left')[0]
-            renderer.color_mapper.range.low_setting = 0.0
-            renderer.color_mapper.range.high_setting = 1.0
+            img_plot.color_mapper.range.low_setting = 0.0
+            img_plot.color_mapper.range.high_setting = 1.0
+
+            if self.editable:
+                img_plot.tools.append(UnitToggleTool(img_plot))
+
             container.add(plot)
         self.plot = container
 
+
+class UnitToggleTool(BaseTool):
+    
+    # BaseTool interface
+    component = Instance(ImagePlot)
+
+    def normal_left_down(self, event):
+        self.handle_mouse_event(event)
+
+    def normal_right_down(self, event):
+        self.handle_mouse_event(event)
+
+    def normal_mouse_move(self, event):
+        self.handle_mouse_event(event)
+
+    def handle_mouse_event(self, event):
+        if event.left_down or event.right_down:
+            plot = self.component
+            x_idx, y_idx = idx = plot.map_index((event.x, event.y))
+            if idx != (None, None):
+                image_data = plot.value
+                val = 1 if event.left_down else 0
+                if image_data.data[y_idx, x_idx] != val:
+                    image_data.data[y_idx, x_idx] = val
+                    image_data.data_changed = True
+                
 
 if __name__ == '__main__':
     import numpy as np
@@ -46,5 +81,5 @@ if __name__ == '__main__':
     x = np.random.random((2, 20)) < 0.5
     layers = [y, x]
 
-    plot = UnitsPlot(layers=layers)
+    plot = UnitsPlot(editable=True, layers=layers)
     plot.configure_traits()
