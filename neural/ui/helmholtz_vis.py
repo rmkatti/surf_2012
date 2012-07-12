@@ -21,7 +21,7 @@ class HelmholtzVis(HasTraits):
     plot = Instance(UnitsPlot)
     sample_button = Button(label='Sample!')
 
-    def trait_view(self, name=None):
+    def default_traits_view(self):
         model_editor = EnumEditor(
             values = {'generative': 'Generative model',
                       'recognition': 'Recognition model'})
