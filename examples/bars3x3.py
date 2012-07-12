@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Local imports.
+from neural.helmholtz import HelmholtzMachine
 from neural.tests.helmholtz_test import benchmark_helmholtz
 from neural.prob import rv_bit_vector
 
@@ -34,7 +35,8 @@ def bars3x3():
     dist = rv_bit_vector(patterns, p)
 
     # Benchmark the HM on this distribution.
-    iters, kl = benchmark_helmholtz(dist, (1, 6, 9),
+    machine = HelmholtzMachine(topology = (1, 6, 9))
+    iters, kl = benchmark_helmholtz(dist, machine,
                                     epsilon = (0.01, 0.01, 0.15),
                                     maxiter = 60000, yield_at = 500)
     plt.clf()

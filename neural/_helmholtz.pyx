@@ -6,7 +6,7 @@ from neural.external cimport tokyo
 from util import sample_indicator, sigmoid
 
 
-def wake(world, G, G_bias, R, epsilon):
+def _wake(world, G, G_bias, R, epsilon):
     # Sample data from the world.
     s = np.ones(R[0].shape[1])
     s[:-1] = world()
@@ -27,7 +27,7 @@ def wake(world, G, G_bias, R, epsilon):
         tokyo.dger4(step, target[:-1] - generated, inputs, G_weights)
 
 
-def sleep(G, G_bias, R, epsilon):
+def _sleep(G, G_bias, R, epsilon):
     # Begin dreaming!
     d = np.ones(G_bias.size + 1)
     sample_indicator(sigmoid(G_bias), d[:-1])

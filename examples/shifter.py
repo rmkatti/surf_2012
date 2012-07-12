@@ -9,7 +9,7 @@ simple stereo images.
 import numpy as np
 
 # Local imports.
-from neural.helmholtz import estimate_generative_dist, helmholtz
+from neural.helmholtz import HelmholtzMachine
 
 # Constants.
 shifter_bits = 8
@@ -23,12 +23,12 @@ def train_shifter():
         image = np.vstack((top, top, bottom, bottom))
         return image.flatten()
 
-    return helmholtz(world, (2, 24, 4 * shifter_bits), 
-                     epsilon = (0.01, 0.01, 0.15),
-                     maxiter = 60000)
+    machine = HelmholtzMachine(topology = (2, 24, 4 * shifter_bits))
+    machine.train(world, epsilon = (0.01, 0.01, 0.15), maxiter = 60000)
+    return machine
     
 def estimate_most_probable(machine, n=10):
-    gen_dist = estimate_generative_dist(machine.G, machine.G_bias, n=10000)
+    gen_dist = machine.estimate_generative_dist(n=10000)
     samples, probs = gen_dist.support
     idx = np.argsort(-probs)
     return zip(samples[idx[:n]], probs[idx[:n]])

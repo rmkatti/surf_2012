@@ -5,7 +5,7 @@ from traits.api import Any, Bool, Button, Enum, DelegatesTo, HasTraits, \
 from traitsui.api import View, HGroup, VGroup, Item, Label, EnumEditor, spring
 
 # Local imports
-from neural.helmholtz import sample_generative_dist, sample_recognition_dist
+from neural.helmholtz import HelmholtzMachine
 from units_plot import UnitsPlot
 
 
@@ -50,16 +50,15 @@ class HelmholtzVis(HasTraits):
 
     @on_trait_change('sample_button')
     def sample(self):
-        machine = self.machine
         if self.model == 'generative':
             data = None
             if self.clamp_top_units:
                 data = self.plot.layers[0].flatten()
-            layers = sample_generative_dist(machine.G, machine.G_bias, 1, 
-                                            all_layers=True, top_units=data)
+            layers = self.machine.sample_generative_dist(1, all_layers=True, 
+                                                         top_units=data)
         elif self.model == 'recognition':
             data = self.plot.layers[-1].flatten()
-            hidden = sample_recognition_dist(machine.R, data, 1)
+            hidden = self.machine.sample_recognition_dist(data, 1)
             layers = hidden + [ data ]
         
         for layer, shape in zip(layers, self.layer_shapes):
