@@ -25,9 +25,11 @@ class HelmholtzMachine(object):
             specifies the input nodes.
         """
         self.topology = topology
-        self.G = self._create_layered_network(topology)
+        self.G = self._create_layer_weights(topology)
         self.G_bias = np.zeros(topology[0])
-        self.R = self._create_layered_network(reversed(topology))
+        self.R = self._create_layer_weights(reversed(topology))
+        self._wake = _wake
+        self._sleep = _sleep
 
     def train(self, world, epsilon=None, maxiter=None, 
               yield_at=None, yield_call=None):
@@ -68,8 +70,8 @@ class HelmholtzMachine(object):
             yield_call(0)
 
         for i in xrange(1, maxiter+1):
-            _wake(world, G, G_bias, R, epsilon)
-            _sleep(G, G_bias, R, epsilon)
+            self._wake(world, G, G_bias, R, epsilon)
+            self._sleep(G, G_bias, R, epsilon)
             if yield_call and next_yield == i:
                 next_yield += yield_at
                 yield_call(i)
@@ -80,14 +82,13 @@ class HelmholtzMachine(object):
         """
         G, G_bias = self.G, self.G_bias
         costs = np.zeros(n)
-        samples = self.sample_recognition_dist(d, n)
+        samples = self.sample_recognition_dist(d, size=n)
 
         # Coding cost for hidden units.
         prob = sigmoid(G_bias)
         for G_weights, s in izip(G, samples):
             costs += np.sum(-s*np.log(prob) - (1-s)*np.log(1-prob), axis=1)
-            s_ext = np.append(s, np.ones((s.shape[0],1)), axis=1)
-            prob = sigmoid(np.dot(G_weights, s_ext.T).T)
+            prob = sigmoid(s.dot(G_weights[:-1]) + G_weights[-1])
 
         # Coding cost for input data.
         d_tiled = np.tile(d.astype(float), (n,1))
@@ -100,21 +101,22 @@ class HelmholtzMachine(object):
         """ Estimate the generative distribution by sampling.
         """
         from prob import rv_bit_vector
-        d = self.sample_generative_dist(n)
+        d = self.sample_generative_dist(size=n)
         return rv_bit_vector.from_samples(d)
 
-    def sample_generative_dist(self, n, all_layers = False, top_units = None):
+    def sample_generative_dist(self, size = None, 
+                               all_layers = False, top_units = None):
         """ Sample the generative distribution.
 
         Parameters:
         -----------
-        n : int
-            The number of sample to draw.
+        size : int, optional [default None]
+            The number of samples to draw. If None, returns a single sample.
 
         all_layers : bool, optional [default False]
             By default, an array of input unit samples is returned. If
             'all_layers` is True, a list of sample arrays for *all* the layers,
-            in top-to-bottom order, is returned instead.
+            in top-to-bottom order, is returned.
 
         top_units : bit vector, optional
             By default, the top-level units are sampled from the generative
@@ -126,85 +128,83 @@ class HelmholtzMachine(object):
         A (list of) 2D sample array(s), where the first dimension indexes the
         individual samples. See 'all_layers' parameter.
         """
-        G, G_bias = self.G, self.G_bias
+        d = top_units or self.G_bias
+        if size is not None:
+            d = np.tile(d, (size,1))
         if top_units is None:
-            G_bias_tiled = np.tile(G_bias, (n,1))
-            d = sample_indicator(sigmoid(G_bias_tiled))
-        else:
-            d = np.tile(top_units, (n,1))
-        if all_layers:
-            samples = [ d ]
-        for G_weights in G:
-            d_ext = np.append(d, np.ones((d.shape[0],1)), axis=1)
-            d = sample_indicator(sigmoid(np.dot(G_weights, d_ext.T).T))
-            if all_layers:
-                samples.append(d)
-        return samples if all_layers else np.array(d, copy=0, dtype=int) 
+            d = sample_indicator(sigmoid(d))
+        samples = _sample_layered_network(self.G, d)
+        return samples if all_layers else samples[-1]
 
-    def sample_recognition_dist(self, d, n):
+    def sample_recognition_dist(self, d, size = None):
         """ Sample the recognition distribution for the given data.
+
+        Parameters:
+        -----------
+        d : bit vector
+            The data to input to the recognition model.
+
+        size : int, optional [default None]
+            The number of samples to draw. If None, returns a single sample.
 
         Returns:
         --------
         A list of 2D sample arrays for the hidden units, in top-to-bottom order.
         The first dimension indexes the individual samples.
         """
-        R = self.R
-        s = np.tile(d, (n,1))
-        samples = []
-        for R_weights in R:
-            s_ext = np.append(s, np.ones((s.shape[0],1)), axis=1)
-            s = sample_indicator(sigmoid(np.dot(R_weights, s_ext.T).T))
-            samples.insert(0, s)
-        return samples
+        if size is not None:
+            d = np.tile(d, (size,1))
+        samples = _sample_layered_network(self.R, d)
+        samples.reverse()
+        return samples[:-1]
 
-    def _create_layered_network(self, topology):
-        """ Create a list of weight matrices for the given network topology.
+    def _create_layer_weights(self, topology):
+        """ Create a list of inter-layer weight matrices for the given network
+        topology.
         """
-        network = []
+        weights = []
         topology = tuple(topology)
         for top, bottom in izip(topology, topology[1:]):
-            network.append(np.zeros((bottom, top + 1)))
-        return network
+            weights.append(np.zeros((top + 1, bottom)))
+        return weights
 
 # Helmholtz machine internals
-    
+
+def _sample_layered_network(layers, s):
+    samples = [ s ]
+    for L in layers:
+        s = sample_indicator(sigmoid(s.dot(L[:-1]) + L[-1]))
+        samples.append(s)
+    return samples
+        
 # Reference/fallback implementation
 def _wake(world, G, G_bias, R, epsilon):
     # Sample data from the world.
     s = world()
-    samples = [ s ]
-
-    # Pass sensory data upwards through the recognition network.
-    for R_weights in R:
-        s = sample_indicator(sigmoid(np.dot(R_weights, np.append(s, 1))))
-        samples.insert(0, s)
+    samples = _sample_layered_network(R, s)
+    samples.reverse()
         
     # Pass back down through the generation network, adjusting weights as we go.
     G_bias += epsilon[0] * (samples[0] - sigmoid(G_bias))
     for G_weights, inputs, target, step \
             in izip(G, samples, samples[1:], epsilon[1:]):
-        inputs = np.append(inputs, 1)
-        generated = sigmoid(np.dot(G_weights, inputs))
-        G_weights += step * np.outer(target - generated, inputs)
+        generated = sigmoid(inputs.dot(G_weights[:-1]) + G_weights[-1])
+        G_weights[:-1] += step * np.outer(inputs, target - generated)
+        G_weights[-1] += step * (target - generated)
 
 # Reference/fallback implementation
 def _sleep(G, G_bias, R, epsilon):
-    # Begin dreaming!
+    # Generate a dream.
     d = sample_indicator(sigmoid(G_bias))
-    dreams = [ d ]
-
-    # Pass dream data down through the generation network.
-    for G_weights in G:
-        d = sample_indicator(sigmoid(np.dot(G_weights, np.append(d, 1))))
-        dreams.insert(0, d)
+    dreams = _sample_layered_network(G, d)
+    dreams.reverse()
 
     # Pass back up through the recognition network, adjusting weights as we go.
     for R_weights, inputs, target, step \
             in izip(R, dreams, dreams[1:], epsilon[::-1]):
-        inputs = np.append(inputs, 1)
-        recognized = sigmoid(np.dot(R_weights, inputs))
-        R_weights += step * np.outer(target - recognized, inputs)
+        recognized = sigmoid(inputs.dot(R_weights[:-1]) + R_weights[-1])
+        R_weights[:-1] += step * np.outer(inputs, target - recognized)
+        R_weights[-1] += step * (target - recognized)
 
 try:
     from _helmholtz import _wake, _sleep
