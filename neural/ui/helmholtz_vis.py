@@ -54,12 +54,11 @@ class HelmholtzVis(HasTraits):
             data = None
             if self.clamp_top_units:
                 data = self.plot.layers[0].flatten()
-            layers = self.machine.sample_generative_dist(1, all_layers=True, 
+            layers = self.machine.sample_generative_dist(all_layers=True, 
                                                          top_units=data)
         elif self.model == 'recognition':
             data = self.plot.layers[-1].flatten()
-            hidden = self.machine.sample_recognition_dist(data, 1)
-            layers = hidden + [ data ]
+            layers = self.machine.sample_recognition_dist(data)
         
         for layer, shape in zip(layers, self.layer_shapes):
             layer.shape = shape

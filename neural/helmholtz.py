@@ -80,21 +80,11 @@ class HelmholtzMachine(object):
         """ Estimate the expected coding cost of the data d by sampling the
         recognition distribution.
         """
-        G, G_bias = self.G, self.G_bias
-        costs = np.zeros(n)
         samples = self.sample_recognition_dist(d, size=n)
-
-        # Coding cost for hidden units.
-        prob = sigmoid(G_bias)
-        for G_weights, s in izip(G, samples):
+        probs = self._generative_probs_for_sample(samples)
+        costs = np.zeros(n)
+        for s, prob in izip(samples, probs):
             costs += np.sum(-s*np.log(prob) - (1-s)*np.log(1-prob), axis=1)
-            prob = sigmoid(s.dot(G_weights[:-1]) + G_weights[-1])
-
-        # Coding cost for input data.
-        d_tiled = np.tile(d.astype(float), (n,1))
-        costs += np.sum(
-            -d_tiled*np.log(prob) - (1-d_tiled)*np.log(1-prob), axis=1)
-
         return costs.mean()
         
     def estimate_generative_dist(self, n = 10000):
@@ -128,7 +118,7 @@ class HelmholtzMachine(object):
         A (list of) 2D sample array(s), where the first dimension indexes the
         individual samples. See 'all_layers' parameter.
         """
-        d = top_units or self.G_bias
+        d = self.G_bias if top_units is None else top_units
         if size is not None:
             d = np.tile(d, (size,1))
         if top_units is None:
@@ -149,14 +139,15 @@ class HelmholtzMachine(object):
 
         Returns:
         --------
-        A list of 2D sample arrays for the hidden units, in top-to-bottom order.
-        The first dimension indexes the individual samples.
+        A list of 2D sample arrays for the network layers, in top-to-bottom
+        order, including the input units. The first dimension indexes the
+        individual samples.
         """
         if size is not None:
             d = np.tile(d, (size,1))
         samples = _sample_layered_network(self.R, d)
         samples.reverse()
-        return samples[:-1]
+        return samples
 
     def _create_layer_weights(self, topology):
         """ Create a list of inter-layer weight matrices for the given network
@@ -167,6 +158,15 @@ class HelmholtzMachine(object):
         for top, bottom in izip(topology, topology[1:]):
             weights.append(np.zeros((top + 1, bottom)))
         return weights
+
+    def _generative_probs_for_sample(self, samples):
+        """ The generative probabilities for each unit in the network, given a
+        sample of the hidden units.
+        """
+        probs = [ sigmoid(s.dot(G_weights[:-1]) + G_weights[-1])
+                  for G_weights, s in izip(self.G, samples) ]
+        probs.insert(0, sigmoid(self.G_bias))
+        return probs
 
 # Helmholtz machine internals
 
