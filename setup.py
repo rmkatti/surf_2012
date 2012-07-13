@@ -1,5 +1,6 @@
 from setuptools import setup, Extension
 from Cython.Distutils import build_ext
+import numpy as np
 
 setup(
     name = 'neural',
@@ -12,4 +13,5 @@ setup(
         Extension('neural._util', ['neural/_util.pyx'],
                   libraries = ['blas', 'gsl']),
     ],
+    include_dirs = [ np.get_include() ],
 )
