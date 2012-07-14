@@ -28,8 +28,6 @@ class HelmholtzMachine(object):
         self.G = self._create_layer_weights(topology)
         self.G_bias = np.zeros(topology[0])
         self.R = self._create_layer_weights(reversed(topology))
-        self._wake = _wake
-        self._sleep = _sleep
 
     def train(self, world, epsilon=None, maxiter=None, 
               yield_at=None, yield_call=None):
@@ -56,7 +54,6 @@ class HelmholtzMachine(object):
             If provided, the given function will be called periodically with the
             current iteration number.
         """
-        G, G_bias, R = self.G, self.G_bias, self.R
         epsilon = epsilon or 0.01
         if np.isscalar(epsilon):
             epsilon = np.repeat(epsilon, len(self.topology))
@@ -70,8 +67,8 @@ class HelmholtzMachine(object):
             yield_call(0)
 
         for i in xrange(1, maxiter+1):
-            self._wake(world, G, G_bias, R, epsilon)
-            self._sleep(G, G_bias, R, epsilon)
+            self._wake(world, epsilon)
+            self._sleep(epsilon)
             if yield_call and next_yield == i:
                 next_yield += yield_at
                 yield_call(i)
@@ -163,10 +160,19 @@ class HelmholtzMachine(object):
         """ The generative probabilities for each unit in the network, given a
         sample of the hidden units.
         """
-        probs = [ sigmoid(s.dot(G_weights[:-1]) + G_weights[-1])
-                  for G_weights, s in izip(self.G, samples) ]
+        probs = _probs_for_layered_network(self.G, samples)
         probs.insert(0, sigmoid(self.G_bias))
         return probs
+
+    def _wake(self, world, epsilon):
+        """ Run a wake cycle.
+        """
+        return _wake(world, self.G, self.G_bias, self.R, epsilon)
+
+    def _sleep(self, epsilon):
+        """ Run a sleep cycle.
+        """
+        return _sleep(self.G, self.G_bias, self.R, epsilon)
 
 # Helmholtz machine internals
 
@@ -176,6 +182,10 @@ def _sample_layered_network(layers, s):
         s = sample_indicator(sigmoid(s.dot(L[:-1]) + L[-1]))
         samples.append(s)
     return samples
+
+def _probs_for_layered_network(layers, samples):
+    return [ sigmoid(s.dot(L[:-1]) + L[-1])
+             for L, s in izip(layers, samples) ]
         
 # Reference/fallback implementation
 def _wake(world, G, G_bias, R, epsilon):
@@ -184,11 +194,11 @@ def _wake(world, G, G_bias, R, epsilon):
     samples = _sample_layered_network(R, s)
     samples.reverse()
         
-    # Pass back down through the generation network, adjusting weights as we go.
+    # Pass back down through the generation network and adjust weights.
     G_bias += epsilon[0] * (samples[0] - sigmoid(G_bias))
-    for G_weights, inputs, target, step \
-            in izip(G, samples, samples[1:], epsilon[1:]):
-        generated = sigmoid(inputs.dot(G_weights[:-1]) + G_weights[-1])
+    G_probs = _probs_for_layered_network(G, samples)
+    for G_weights, inputs, target, generated, step \
+            in izip(G, samples, samples[1:], G_probs, epsilon[1:]):
         G_weights[:-1] += step * np.outer(inputs, target - generated)
         G_weights[-1] += step * (target - generated)
 
@@ -199,10 +209,10 @@ def _sleep(G, G_bias, R, epsilon):
     dreams = _sample_layered_network(G, d)
     dreams.reverse()
 
-    # Pass back up through the recognition network, adjusting weights as we go.
-    for R_weights, inputs, target, step \
-            in izip(R, dreams, dreams[1:], epsilon[::-1]):
-        recognized = sigmoid(inputs.dot(R_weights[:-1]) + R_weights[-1])
+    # Pass back up through the recognition network and adjust weights.
+    R_probs = _probs_for_layered_network(R, dreams)
+    for R_weights, inputs, target, recognized, step \
+            in izip(R, dreams, dreams[1:], R_probs, epsilon[::-1]):
         R_weights[:-1] += step * np.outer(inputs, target - recognized)
         R_weights[-1] += step * (target - recognized)
 

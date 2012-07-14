@@ -8,7 +8,7 @@ from neural.tests.helmholtz_test import benchmark_helmholtz
 from neural.prob import rv_bit_vector
 
 
-def bars3x3():
+def bars3x3(klass = None):
     """ A world consisting of horizontal and vertical bars in a 3x3 grid.
 
     This example is used in Kevin Kirby's 'Tutorial on Helmholtz Machines'.
@@ -35,7 +35,8 @@ def bars3x3():
     dist = rv_bit_vector(patterns, p)
 
     # Benchmark the HM on this distribution.
-    machine = HelmholtzMachine(topology = (1, 6, 9))
+    klass = klass or HelmholtzMachine
+    machine = klass(topology = (1, 6, 9))
     iters, kl = benchmark_helmholtz(dist, machine,
                                     epsilon = (0.01, 0.01, 0.15),
                                     maxiter = 60000, yield_at = 500)
@@ -44,6 +45,7 @@ def bars3x3():
     plt.xlabel('Iteration')
     plt.ylabel('KL Divergence')
     plt.show()
+    return kl[-1]
 
 
 if __name__ == '__main__':

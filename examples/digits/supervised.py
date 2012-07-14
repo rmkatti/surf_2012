@@ -10,14 +10,16 @@ from mnist import read_mnist
 from util import prepare_mnist_images, shuffled_iter
 
 
-def train(digits = None, data_path = None):
+def train(digits = None, data_path = None, klass = None):
     digits = digits or range(10)
+    klass = klass or HelmholtzMachine
+
     imgs, labels = read_mnist(path=data_path, training=True)
     imgs = prepare_mnist_images(imgs)
     machines = {}
     for digit in digits:
         world = shuffled_iter(imgs[labels == digit])
-        machine = machines[digit] = HelmholtzMachine((16, 64, 64, 28*28))
+        machine = machines[digit] = klass(topology = (16, 64, 64, 28*28))
         machine.train(world.next, epsilon = 0.01, maxiter = 50000)
     return machines
 
