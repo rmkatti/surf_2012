@@ -29,7 +29,7 @@ class HelmholtzMachine(object):
         self.G_bias = np.zeros(topology[0])
         self.R = self._create_layer_weights(reversed(topology))
 
-    def train(self, world, epsilon=None, maxiter=None, 
+    def train(self, world, epsilon=None, anneal=None, maxiter=None,
               yield_at=None, yield_call=None):
         """ Train the Helmholtz machine.
 
@@ -42,9 +42,17 @@ class HelmholtzMachine(object):
             the size of the bit vectors produced by the 'world' function.
 
         epsilon : float or sequence of floats, optional [default 0.01]
-            The step size for the weight update rules. If a sequence is given,
-            it must be of the same size as 'topology'; a different step size may
-            then be used at each layer.
+            The learning rate, i.e. the step size for the weight updates. If a
+            different learning rate is required at each layer, a sequence may be
+            given, which must be of the same length as 'topology'.
+
+        anneal : float or sequence of floats, optional
+            By default, the learning rate is constant. If 'anneal' is specified,
+            the learning rate is decreased according to the schedule
+
+                epsilon = epsilon_0 / (1 + aneal * t),
+                
+            where t is the current iteration.
 
         maxiter : int, optional [default 50000]
             The number the wake-sleep cycles to run.
@@ -54,21 +62,29 @@ class HelmholtzMachine(object):
             If provided, the given function will be called periodically with the
             current iteration number.
         """
-        epsilon = epsilon or 0.01
+        if epsilon is None:
+            epsilon = 0.01
         if np.isscalar(epsilon):
             epsilon = np.repeat(epsilon, len(self.topology))
         else:
             epsilon = np.array(epsilon, copy=0)
-        maxiter = maxiter or 50000
-        yield_at = yield_at or 1000
 
+        if anneal is not None:
+            epsilon_0 = epsilon.copy()
+            if not np.isscalar(anneal):
+                anneal = np.array(anneal, copy=0)
+
+        yield_at = yield_at or 1000
         if yield_call:
             next_yield = yield_at
             yield_call(0)
 
+        maxiter = maxiter or 50000
         for i in xrange(1, maxiter+1):
             self._wake(world, epsilon)
             self._sleep(epsilon)
+            if anneal is not None:
+                epsilon = epsilon_0 / (1 + anneal * i)
             if yield_call and next_yield == i:
                 next_yield += yield_at
                 yield_call(i)

@@ -38,14 +38,14 @@ def bars3x3(klass = None):
     klass = klass or HelmholtzMachine
     machine = klass(topology = (1, 6, 9))
     iters, kl = benchmark_helmholtz(dist, machine,
-                                    epsilon = (0.01, 0.01, 0.15),
-                                    maxiter = 60000, yield_at = 500)
+                                    epsilon = 0.1, anneal = 1e-4,
+                                    maxiter = 80000, yield_at = 500)
+    print 'Final KL divergence:', kl[-1]
     plt.clf()
     plt.plot(iters, kl)
     plt.xlabel('Iteration')
     plt.ylabel('KL Divergence')
     plt.show()
-    return kl[-1]
 
 
 if __name__ == '__main__':

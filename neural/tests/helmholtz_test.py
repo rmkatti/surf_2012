@@ -6,8 +6,8 @@ from neural.helmholtz import HelmholtzMachine
 from neural.prob import kl_divergence
 
 
-def benchmark_helmholtz(dist, machine, epsilon=None, maxiter=None, 
-                        samples=None, yield_at=None):
+def benchmark_helmholtz(dist, machine, epsilon=None, anneal=None, 
+                        maxiter=None, samples=None, yield_at=None):
     """ Benchmark the Helmholtz machine on a known distribution.
     """
     iters, kl = [], []
@@ -18,7 +18,7 @@ def benchmark_helmholtz(dist, machine, epsilon=None, maxiter=None,
         kl.append(kl_divergence(dist, gen_dist))
 
     world = dist.rvs
-    machine.train(world, epsilon=epsilon, maxiter=maxiter,
-                  yield_at=yield_at, yield_call=update_kl)
+    machine.train(world, epsilon=epsilon, anneal=anneal,
+                  maxiter=maxiter, yield_at=yield_at, yield_call=update_kl)
 
     return np.array(iters), np.array(kl)
