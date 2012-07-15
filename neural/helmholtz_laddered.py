@@ -29,7 +29,7 @@ class LadderedHelmholtzMachine(HelmholtzMachine):
         if size is not None:
             d = np.tile(d, (size,1))
         if top_units is None:
-            d = sample_indicator(sigmoid(d))
+            d = _sample_laddered_bias(d, self.G_bias_lateral)
         samples = _sample_laddered_network(self.G, self.G_lateral, d)
         return samples if all_layers else samples[-1]
 
@@ -74,6 +74,43 @@ class LadderedHelmholtzMachine(HelmholtzMachine):
 
 # Laddered Helmholtz machine internals
 
-from _helmholtz_laddered import \
-    _sample_laddered_bias, _sample_laddered_network, \
-    _probs_for_laddered_bias, _probs_for_laddered_network, _wake, _sleep
+def _sample_laddered_bias(bias, lateral):
+    s = np.empty(bias.shape)
+    s_in = bias.copy()
+    s[...,0] = sample_indicator(sigmoid(s_in[...,0]))
+    for i in range(1, s.shape[-1]):
+        s_in[...,i] += s[...,:i].dot(lateral[i-1,:i])
+        s[...,i] = sample_indicator(sigmoid(s_in[...,i]))
+    return s
+
+def _sample_laddered_network(layers, laterals, s):
+    samples = [ s ]
+    for layer, lateral in zip(layers, laterals):
+        s_in = s.dot(layer[:-1]) + layer[-1]
+        s = np.empty(s_in.shape)
+        s[...,0] = sample_indicator(sigmoid(s_in[...,0]))
+        for i in range(1, s.shape[-1]):
+            s_in[...,i] += s[...,:i].dot(lateral[i-1,:i])
+            s[...,i] = sample_indicator(sigmoid(s_in[...,i]))
+        samples.append(s)
+    return samples
+
+def _probs_for_laddered_bias(bias, lateral, s):
+    p_in = bias.copy()
+    for i in range(1, s.shape[-1]):
+        p_in[...,i] += s[...,:i].dot(lateral[i-1,:i])
+    return sigmoid(p_in)
+
+def _probs_for_laddered_network(layers, laterals, samples):
+    probs = []
+    s_prev = samples[0]
+    for layer, lateral, s in zip(layers, laterals, samples[1:]):
+        p_in = s_prev.dot(layer[:-1]) + layer[-1]
+        for i in range(1, s.shape[-1]):
+            p_in[...,i] += s[...,:i].dot(lateral[i-1,:i])
+        p = sigmoid(p_in)
+        s_prev = s
+        probs.append(p)
+    return probs
+
+from _helmholtz_laddered import _wake, _sleep
