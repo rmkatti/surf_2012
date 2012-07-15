@@ -17,8 +17,8 @@ def benchmark_helmholtz(dist, machine, epsilon=None, anneal=None,
         iters.append(i)
         kl.append(kl_divergence(dist, gen_dist))
 
-    world = dist.rvs
-    machine.train(world, epsilon=epsilon, anneal=anneal,
+    world = dist.rvs_iter(size = maxiter)
+    machine.train(world.next, epsilon=epsilon, anneal=anneal,
                   maxiter=maxiter, yield_at=yield_at, yield_call=update_kl)
 
     return np.array(iters), np.array(kl)

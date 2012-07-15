@@ -80,6 +80,11 @@ class rv_bit_vector(object):
         """
         return self._xk[self._rv.rvs(size=size)]
 
+    def rvs_iter(self, size=None):
+        """ An iterator over samples from the probability distribution.
+        """
+        return iter(self.rvs(size=size))
+
 
 def kl_divergence(p_rv, q_rv, epsilon=1e-6):
     """ Computes the Kullback-Leibler divergence D(p||q) between the
