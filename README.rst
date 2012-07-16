@@ -20,9 +20,10 @@ The UI layer requires libraries from ETS 4.2:
 * Traits UI
 * Chaco
 
-Finally, some of the examples have additional miscellaneous dependencies:
+Finally, the project has several *optional* dependencies:
 
-* matplotlib 1.1
+* jsonpickle 0.4.0 (for serialization routines)
+* matplotlib 1.1 (for certain examples)
 
 Note that older versions of the indicated packages may work, but they have not
 been tested.

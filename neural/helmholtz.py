@@ -24,7 +24,7 @@ class HelmholtzMachine(object):
             the generative bias nodes, while the last element of the sequence
             specifies the input nodes.
         """
-        self.topology = topology
+        self.topology = tuple(topology)
         self.G = self._create_layer_weights(topology)
         self.G_bias = np.zeros(topology[0])
         self.R = self._create_layer_weights(reversed(topology))
