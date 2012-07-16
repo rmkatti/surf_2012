@@ -8,7 +8,9 @@ from neural.prob import kl_divergence
 
 def benchmark_helmholtz(dist, machine, epsilon=None, anneal=None, 
                         maxiter=None, samples=None, yield_at=None):
-    """ Benchmark the Helmholtz machine on a known distribution.
+    """ Benchmark the Helmholtz machine on a known distribution by explicitly
+    calculating the KL divergence from the distribution to the HM's generative
+    distribution.
     """
     iters, kl = [], []
     samples = samples or 10000

@@ -3,8 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Local imports.
+from neural.benchmark.kl import benchmark_helmholtz
 from neural.helmholtz import HelmholtzMachine
-from neural.tests.helmholtz_test import benchmark_helmholtz
 from neural.prob import rv_bit_vector
 
 
