@@ -1,3 +1,7 @@
+# Standard library imports.
+import base64
+import zlib
+
 # System library imports.
 import jsonpickle
 import numpy as np
@@ -41,18 +45,19 @@ def save(filename, obj):
 
 class NDArrayHandler(jsonpickle.handlers.BaseHandler):
     """ A JSON-pickler for NumPy arrays.
+
+    The raw bytes are compressed using zlib and then base 64 encoded.
     """
 
     def flatten(self, arr, data):
-        #data['bytes'] = arr.tostring()
-        data['data'] = arr.tolist()
+        data['bytes'] = base64.b64encode(zlib.compress(arr.tostring()))
         data['dtype'] = arr.dtype.str
-        #data['shape'] = arr.shape
+        data['shape'] = arr.shape
         return data
 
     def restore(self, data):
-        #array = np.fromstring(data['bytes'], dtype=data['dtype'])
-        #return array.reshape(data['shape'])
-        return np.array(data['data'], dtype=data['dtype'])
+        byte_str = zlib.decompress(base64.b64decode(data['bytes']))
+        array = np.fromstring(byte_str, dtype=data['dtype'])
+        return array.reshape(data['shape'])
 
 jsonpickle.handlers.registry.register(np.ndarray, NDArrayHandler)
