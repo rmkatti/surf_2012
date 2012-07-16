@@ -16,7 +16,7 @@ def learn(digits = None, data_path = None, klass = None):
     imgs = prepare_mnist_images(imgs[idx])
     labels = labels[idx]
 
-    world = shuffled_iter(imgs)
+    world = shuffled_iter(imgs, copy=False)
     machine = klass(topology = (4, 128, 128, 28*28))
     machine.train(world.next, 
                   epsilon = 0.01, 

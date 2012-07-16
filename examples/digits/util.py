@@ -9,10 +9,10 @@ def prepare_mnist_images(imgs):
     return np.round(imgs, out=imgs)
 
 
-def shuffled_iter(items):
+def shuffled_iter(items, copy=True):
     """ Iterate through items infinitely, shuffling them after every pass.
     """
-    items = np.array(items)
+    items = np.array(items, copy=copy)
     while True:
         np.random.shuffle(items)
         for item in items:
