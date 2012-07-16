@@ -49,4 +49,15 @@ def bars3x3(klass = None):
 
 
 if __name__ == '__main__':
-    bars3x3()
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--laddered', action='store_true', default=False,
+                        help='use the laddered Helmholtz machine')
+    args = parser.parse_args()
+    klass = None
+    if args.laddered:
+        from neural.helmholtz_laddered import LadderedHelmholtzMachine
+        klass = LadderedHelmholtzMachine
+
+    bars3x3(klass = klass)
