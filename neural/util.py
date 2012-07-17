@@ -1,4 +1,10 @@
+# Standard library imports.
+import functools
+
+# System library imports.
 import numpy as np
+
+# Bit vector functions.
 
 def bit_vector_from_str(s):
     """ Convert a string to a bit vector.
@@ -30,6 +36,8 @@ def count_bit_vectors(v):
     counts = np.diff(np.append(idx, v.shape[0]))
     return unique_v, counts
 
+# Math functions.
+
 try:
     from _util import logistic, sigmoid, sample_indicator
 except ImportError:
@@ -46,3 +54,14 @@ except ImportError:
         if out is None:
             out = np.ndarray(p.shape, dtype=float)
         return np.less(np.random.sample(p.shape), p, out)
+
+# Functional programming.
+
+def memoize(obj):
+    cache = obj.cache = {}
+    @functools.wraps(obj)
+    def memoizer(*args):
+        if args not in cache:
+            cache[args] = obj(*args)
+        return cache[args]
+    return memoizer

@@ -7,37 +7,12 @@ import zlib
 import jsonpickle
 import numpy as np
 
+# Local imports.
+from util import memoize
+
 # Exported functions.
 encode = jsonpickle.encode
 decode = jsonpickle.decode
-
-# Monkey-patch jsonpickle. The existing implementations of these methods check
-# whether the obj is strictly of the specified type, e.g. whether ``type(obj) is
-# dict``. Naturally, this breaks TraitsList, TraitsDict, etc.
-jsonpickle.util.is_dictionary = lambda obj: isinstance(obj, dict)
-jsonpickle.util.is_list = lambda obj: isinstance(obj, list)
-jsonpickle.util.is_set = lambda obj: isinstance(obj, set)
-
-
-class open_filename(object):
-    """ A context manager that opens files but passes through file-like objects.
-    """
-    def __init__(self, filename, *args, **kwargs):
-        self.is_filename = isinstance(filename, basestring)
-        if self.is_filename:
-            filename = os.path.abspath(os.path.expanduser(filename))
-            self.fh = open(filename, *args, **kwargs)
-        else:
-            self.fh = filename
-
-    def __enter__(self):
-        return self.fh
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        if self.is_filename:
-            self.fh.close()
-        return False
-
 
 def load(filename):
     """ Load a JSON-pickled object.
@@ -51,6 +26,67 @@ def save(filename, obj):
     with open_filename(filename, 'w') as fh:
         return fh.write(encode(obj))
 
+class open_filename(object):
+    """ A context manager that opens files but passes through file-like objects.
+    """
+    def __init__(self, filename, *args, **kwargs):
+        self.is_filename = isinstance(filename, basestring)
+        if self.is_filename:
+            filename = os.path.expanduser(filename)
+            self.fh = open(filename, *args, **kwargs)
+        else:
+            self.fh = filename
+
+    def __enter__(self):
+        return self.fh
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self.is_filename:
+            self.fh.close()
+        return False
+
+# Monkey-patch jsonpickle. The existing implementations of these methods check
+# whether the obj is strictly of the specified type, e.g. whether ``type(obj) is
+# dict``. Naturally, this breaks TraitsList, TraitsDict, etc.
+jsonpickle.util.is_dictionary = lambda obj: isinstance(obj, dict)
+jsonpickle.util.is_list = lambda obj: isinstance(obj, list)
+jsonpickle.util.is_set = lambda obj: isinstance(obj, set)
+
+# Monkey-patch jsonpickle to infer real module name from '__main__' if possible.
+
+def _getclassdetail(obj):
+    cls = obj.__class__
+    module = cls.__module__
+    if module == '__main__':
+        module = _get_main_name()
+    name = cls.__name__
+    return module, name
+
+@memoize
+def _get_main_name():
+    import __main__
+    module = '__main__'
+    try:
+        # Available if called with 'python -m'.
+        module = __main__.__loader__.fullname
+    except AttributeError:
+        try:
+            # Available under most circumstances.
+            path = os.path.abspath(__main__.__file__)
+        except AttributeError:
+            pass
+        else:
+            path, name = os.path.split(path)
+            names = [ os.path.splitext(name)[0] ]
+            while path and os.path.isfile(os.path.join(path, '__init__.py')):
+                path, name = os.path.split(path)
+                names.insert(0, name)
+            module = '.'.join(names)
+    return module
+
+jsonpickle.pickler._getclassdetail = _getclassdetail
+
+# Add np.ndarray support to jsonpickle. Not a monkey-patch!
 
 class NDArrayHandler(jsonpickle.handlers.BaseHandler):
     """ A JSON-pickler for NumPy arrays.

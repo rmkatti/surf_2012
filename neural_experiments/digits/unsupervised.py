@@ -13,7 +13,7 @@ class UnsupervisedDigitsRunner(NeuralRunner):
     
     # NeuralRunner configuration.
     cls = HelmholtzMachine
-    topology = (16, 128, 128, 28*28)
+    topology = [16, 128, 128, 28*28]
     epsilon = 0.01
     maxiter = 100000
 
