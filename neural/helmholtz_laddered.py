@@ -25,11 +25,11 @@ class LadderedHelmholtzMachine(HelmholtzMachine):
                                all_layers = False, top_units = None):
         """ Sample the generative distribution.
         """
-        d = self.G_bias if top_units is None else top_units
-        if size is not None:
-            d = np.tile(d, (size,1))
         if top_units is None:
-            d = _sample_laddered_bias(d, self.G_bias_lateral)
+            d = _sample_laddered_bias(self.G_bias, self.G_bias_lateral, 
+                                      size=size)
+        else:
+            d = top_units if size is None else np.tile(top_units, (size,1))
         samples = _sample_laddered_network(self.G, self.G_lateral, d)
         return samples if all_layers else samples[-1]
 
@@ -74,9 +74,10 @@ class LadderedHelmholtzMachine(HelmholtzMachine):
 
 # Laddered Helmholtz machine internals
 
-def _sample_laddered_bias(bias, lateral):
-    s = np.empty(bias.shape)
-    s_in = bias.copy()
+def _sample_laddered_bias(bias, lateral, size=None):
+    shape = 1 if size is None else (size, 1)
+    s_in = np.tile(bias, shape)
+    s = np.empty(s_in.shape)
     s[...,0] = sample_indicator(sigmoid(s_in[...,0]))
     for i in range(1, s.shape[-1]):
         s_in[...,i] += s[...,:i].dot(lateral[i-1,:i])
@@ -96,7 +97,7 @@ def _sample_laddered_network(layers, laterals, s):
     return samples
 
 def _probs_for_laddered_bias(bias, lateral, s):
-    p_in = bias.copy()
+    p_in = np.tile(bias, s.shape[:-1] + (1,))
     for i in range(1, s.shape[-1]):
         p_in[...,i] += s[...,:i].dot(lateral[i-1,:i])
     return sigmoid(p_in)
