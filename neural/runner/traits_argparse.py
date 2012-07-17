@@ -4,7 +4,7 @@ import sys
 
 # System library imports.
 import numpy as np
-from traits.api import CTrait, HasTraits, Class, Callable, Dict
+from traits.api import CTrait, HasTraits, Callable, Dict, Type
 
 # Dynamic ArgumentParser construction.
 
@@ -43,11 +43,6 @@ def parse_array(trait, value):
         arr = arr.reshape(trait.shape)
     return arr
 
-def parse_class(trait, value):
-    module, name = value.rsplit('.', 1)
-    __import__(module)
-    return getattr(sys.modules[module], name)
-
 def parse_compound(trait, value):
     for handler in get_trait_type(trait).handlers:
         parse = parser_registry.lookup(handler)
@@ -63,6 +58,11 @@ def parse_list(trait, value):
     parse_item = parser_registry.lookup(subtrait)
     return [ parse_item(subtrait, item) for item in _parse_sequence(value) ]
 
+def parse_type(trait, value):
+    module, name = value.rsplit('.', 1)
+    __import__(module)
+    return getattr(sys.modules[module], name)
+
 def _parse_sequence(value):
     return [ item.strip() for item in value.strip('[]()').split(',') ]
 
@@ -75,7 +75,7 @@ def get_trait_type(trait):
 
 class ParserRegistry(HasTraits):
 
-    _map = Dict(Class, Callable)
+    _map = Dict(Type, Callable)
 
     def add(self, cls, parse):
         self._map[cls] = parse
@@ -92,7 +92,7 @@ class ParserRegistry(HasTraits):
             del self._map[cls]
 
 from traits.api import Array, BaseBool, BaseFile, BaseFloat, BaseInt, \
-    BaseLong, BaseStr, BaseUnicode, Class, List, TraitCompound
+    BaseLong, BaseStr, BaseUnicode, List, TraitCompound, Type
 
 parser_registry = ParserRegistry()
 parser_registry.add(Array, parse_array)
@@ -103,6 +103,6 @@ parser_registry.add(BaseInt, make_parse(int))
 parser_registry.add(BaseLong, make_parse(long))
 parser_registry.add(BaseStr, null_parse)
 parser_registry.add(BaseUnicode, null_parse)
-parser_registry.add(Class, parse_class)
 parser_registry.add(List, parse_list)
 parser_registry.add(TraitCompound, parse_compound)
+parser_registry.add(Type, parse_type)

@@ -1,6 +1,6 @@
 # System library imports.
 import numpy as np
-from traits.api import Array, Int
+from traits.api import Any, Array, Int
 
 # Local imports.
 from neural.prob import kl_divergence
@@ -18,6 +18,7 @@ class BenchmarkRunner(NeuralRunner):
     yield_at = Int(500, config=True)
 
     # Results.
+    machine = Any
     iters = Array(dtype=int)
     kl = Array(dtype=float)
 

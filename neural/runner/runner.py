@@ -2,8 +2,8 @@
 import datetime
 
 # System library imports.
-from traits.api import HasTraits, Any, BaseInstance, Class, Either, File, \
-    Float, Int, List
+from traits.api import HasTraits, BaseInstance, Either, File, Float, Int, \
+    List, Type
 
 # Local imports.
 import traits_argparse
@@ -65,12 +65,9 @@ class NeuralRunner(Runner):
     """ The base runner class for a neural network simulation.
     """
     # Configuration.
-    cls = Class(config=True)
+    cls = Type(config=True)
     topology = List(Int, config=True)
 
     epsilon = Either(Float, List(Float), config=True)
     anneal = Either(Float, List(Float), config=True)
     maxiter = Int(config=True)
-
-    # Results.
-    machine = Any
