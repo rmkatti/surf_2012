@@ -14,7 +14,7 @@ The core dependencies for this project are:
 * BLAS (including headers)
 * GSL (including headers)
 
-The UI layer requires libraries from ETS 4.2:
+The UI layer and example runner require libraries from ETS 4.2:
 
 * Traits
 * Traits UI
