@@ -48,7 +48,7 @@ class LadderedHelmholtzMachine(HelmholtzMachine):
         """
         probs = _probs_for_laddered_network(self.G, self.G_lateral, samples)
         probs.insert(0, _probs_for_laddered_bias(
-                self.G_bias, self.G_lateral_bias, samples[0]))
+                self.G_bias, self.G_bias_lateral, samples[0]))
         return probs
 
     def _wake(self, world, epsilon):
