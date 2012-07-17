@@ -3,4 +3,4 @@
 *.pyc
 *.so
 build/
-examples/digits/data/
+neural_experiments/digits/data/
