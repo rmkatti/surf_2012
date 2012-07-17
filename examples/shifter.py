@@ -7,25 +7,41 @@ simple stereo images.
 """
 # System library imports.
 import numpy as np
+from traits.api import Any, Int
 
 # Local imports.
 from neural.helmholtz import HelmholtzMachine
-
-# Constants.
-shifter_bits = 8
+from neural.runner.runner import NeuralRunner
 
 
-def train_shifter():
-    def world():
+class ShifterRunner(NeuralRunner):
+
+    # NeuralRunner configuration.
+    cls = HelmholtzMachine
+    epsilon = (0.01, 0.01, 0.15)
+    maxiter = 60000
+
+    # ShifterRunner configuration.
+    bits = Int(8, config=True)
+
+    # Results.
+    machine = Any
+
+    def _topology_default(self):
+        return [2, 24, 4 * self.bits]
+
+    def run(self):
+        self.machine = machine = self.cls(topology = self.topology)
+        machine.train(self.sample_world, epsilon=self.epsilon, 
+                      anneal=self.anneal, maxiter=self.maxiter)
+
+    def sample_world(self):
         shift = 1 if np.random.sample() < 0.5 else -1
-        bottom = np.array(np.random.sample(shifter_bits) < 0.2, dtype=int)
+        bottom = np.array(np.random.sample(self.bits) < 0.2, dtype=int)
         top = np.roll(bottom, shift)
         image = np.vstack((top, top, bottom, bottom))
         return image.flatten()
 
-    machine = HelmholtzMachine(topology = (2, 24, 4 * shifter_bits))
-    machine.train(world, epsilon = (0.01, 0.01, 0.15), maxiter = 60000)
-    return machine
     
 def estimate_most_probable(machine, n=10):
     gen_dist = machine.estimate_generative_dist(n=10000)
@@ -33,14 +49,16 @@ def estimate_most_probable(machine, n=10):
     idx = np.argsort(-probs)
     return zip(samples[idx[:n]], probs[idx[:n]])
 
-
-if __name__ == '__main__':
+def main(args = None):
     from neural.ui.helmholtz_vis import HelmholtzVis
 
-    machine = train_shifter()
-    #for sample, prob in estimate_most_probable(machine):
-    #    print sample.reshape(4, shifter_bits), prob
+    runner = ShifterRunner()
+    runner.main(args=args)
+    machine = runner.machine
+    
+    for sample, prob in estimate_most_probable(machine):
+        print sample.reshape(4, runner.bits), prob
 
-    vis = HelmholtzVis(machine = machine, 
-                       layer_shapes = [(1,2), (3,8), (4, shifter_bits)])
-    vis.configure_traits()
+
+if __name__ == '__main__':
+    main()

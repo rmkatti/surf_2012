@@ -15,7 +15,7 @@ import numpy as np
 def read_mnist(path = None, training = True):
     """ Load an MNIST image set and the corresponding labels.
     """
-    if path is None:
+    if not path:
         local_dir = os.path.dirname(os.path.abspath(__file__))
         path = os.path.join(local_dir, 'data')
 

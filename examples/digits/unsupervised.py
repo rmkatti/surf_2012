@@ -1,42 +1,45 @@
 # System library imports.
 import numpy as np
+from traits.api import Any, File, Int, List
 
 # Local imports.
 from neural.helmholtz import HelmholtzMachine
+from neural.runner.runner import NeuralRunner
 from mnist import read_mnist
 from util import prepare_mnist_images, shuffled_iter
 
 
-def learn(digits = None, data_path = None, klass = None):
-    digits = digits or range(10)
-    klass = klass or HelmholtzMachine
+class UnsupervisedDigitsRunner(NeuralRunner):
+    
+    # NeuralRunner configuration.
+    cls = HelmholtzMachine
+    topology = (16, 128, 128, 28*28)
+    epsilon = 0.01
+    maxiter = 100000
 
-    imgs, labels = read_mnist(path=data_path, training=True)
-    idx = np.in1d(labels, digits)
-    imgs = prepare_mnist_images(imgs[idx])
-    labels = labels[idx]
+    # UnsupervisedDigitsRunner configuration.
+    digits = List(Int, range(10), config=True)
+    data_path = File(config=True, transient=False)
 
-    world = shuffled_iter(imgs, copy=False)
-    machine = klass(topology = (4, 128, 128, 28*28))
-    machine.train(world.next, 
-                  epsilon = 0.01, 
-                  maxiter = 50000 * len(digits))
-    return machine
+    # Results.
+    machine = Any
 
+    def run(self):
+        imgs, labels = read_mnist(path=self.data_path, training=True)
+        idx = np.in1d(labels, self.digits)
+        imgs = prepare_mnist_images(imgs[idx])
+        labels = labels[idx]
+
+        world = shuffled_iter(imgs, copy=False)
+        self.machine = self.cls(topology = self.topology)
+        self.machine.train(world.next, 
+                           epsilon = self.epsilon, anneal = self.anneal,
+                           maxiter = self.maxiter)
+
+
+def main(args = None):
+    runner = UnsupervisedDigitsRunner()
+    runner.main(args=args)
 
 if __name__ == '__main__':
-    import argparse
-    from neural.serialize import save
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument('filenames', nargs=1, metavar='OUTFILE')
-    parser.add_argument('--laddered', action='store_true', default=False,
-                        help='use the laddered Helmholtz machine')
-    args = parser.parse_args()
-    klass = None
-    if args.laddered:
-        from neural.helmholtz_laddered import LadderedHelmholtzMachine
-        klass = LadderedHelmholtzMachine
-
-    machine = learn(klass = klass)
-    save(args.filenames[0], machine)
+    main()

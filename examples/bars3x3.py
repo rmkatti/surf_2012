@@ -13,7 +13,7 @@ from neural.prob import rv_bit_vector
 
 class Bars3x3Runner(BenchmarkRunner):
 
-    # Default configuration.
+    # BenchmarkRunner configuration.
     cls = HelmholtzMachine
     topology = (1, 6, 9)
     epsilon = 0.1
