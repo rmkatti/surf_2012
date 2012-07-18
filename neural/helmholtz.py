@@ -69,7 +69,7 @@ class HelmholtzMachine(object):
         else:
             epsilon = np.array(epsilon, copy=0)
 
-        if anneal is not None:
+        if anneal:
             epsilon_0 = epsilon.copy()
             if not np.isscalar(anneal):
                 anneal = np.array(anneal, copy=0)
@@ -83,7 +83,7 @@ class HelmholtzMachine(object):
         for i in xrange(1, maxiter+1):
             self._wake(world, epsilon)
             self._sleep(epsilon)
-            if anneal is not None:
+            if anneal:
                 epsilon = epsilon_0 / (1 + anneal * i)
             if yield_call and next_yield == i:
                 next_yield += yield_at

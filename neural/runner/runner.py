@@ -68,6 +68,6 @@ class NeuralRunner(Runner):
     cls = Type(config=True)
     topology = List(Int, config=True)
 
-    epsilon = Either(Float, List(Float), config=True)
-    anneal = Either(Float, List(Float), config=True)
+    epsilon = Either(Float, List(Float), config=True, default=0.01)
+    anneal = Either(Float, List(Float), config=True, default=0)
     maxiter = Int(config=True)
