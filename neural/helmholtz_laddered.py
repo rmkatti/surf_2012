@@ -77,8 +77,38 @@ class LadderedHelmholtzMachine(HelmholtzMachine):
 
 # Laddered Helmholtz machine internals
 
-from _helmholtz_laddered import (
-    _sample_laddered_layer, _sample_laddered_network, 
-    _probs_for_laddered_layer, _probs_for_laddered_network,
-    _wake, _sleep,
-)
+def _sample_laddered_layer(lateral, s_in):
+    if lateral is None:
+        return sample_indicator(sigmoid(s_in))
+    s = np.empty(s_in.shape)
+    s[...,0] = sample_indicator(sigmoid(s_in[...,0]))
+    for i in range(1, s.shape[-1]):
+        s_in[...,i] += s[...,:i].dot(lateral[i-1,:i])
+        s[...,i] = sample_indicator(sigmoid(s_in[...,i]))
+    return s
+
+def _sample_laddered_network(layers, laterals, s):
+    samples = [ s ]
+    for layer, lateral in zip(layers, laterals):
+        s_in = s.dot(layer[:-1]) + layer[-1]
+        s = _sample_laddered_layer(lateral, s_in)
+        samples.append(s)
+    return samples
+
+def _probs_for_laddered_layer(lateral, p_in, s):
+    if lateral is not None:
+        for i in range(1, s.shape[-1]):
+            p_in[...,i] += s[...,:i].dot(lateral[i-1,:i])
+    return sigmoid(p_in)
+
+def _probs_for_laddered_network(layers, laterals, samples):
+    probs = []
+    s_prev = samples[0]
+    for layer, lateral, s in zip(layers, laterals, samples[1:]):
+        p_in = s_prev.dot(layer[:-1]) + layer[-1]
+        p = _probs_for_laddered_layer(lateral, p_in, s)
+        probs.append(p)
+        s_prev = s
+    return probs
+
+from _helmholtz_laddered import _wake, _sleep
