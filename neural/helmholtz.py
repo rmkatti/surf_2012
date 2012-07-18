@@ -24,10 +24,10 @@ class HelmholtzMachine(object):
             the generative bias nodes, while the last element of the sequence
             specifies the input nodes.
         """
-        self.topology = tuple(topology)
+        self.topology = list(topology)
         self.G = self._create_layer_weights(topology)
         self.G_bias = np.zeros(topology[0])
-        self.R = self._create_layer_weights(reversed(topology))
+        self.R = self._create_layer_weights(topology[::-1])
 
     def train(self, world, epsilon=None, anneal=None, maxiter=None,
               yield_at=None, yield_call=None):
@@ -136,7 +136,7 @@ class HelmholtzMachine(object):
             d = np.tile(d, (size,1))
         if top_units is None:
             d = sample_indicator(sigmoid(d))
-        samples = _sample_layered_network(self.G, d)
+        samples = _sample_factorial_network(self.G, d)
         return samples if all_layers else samples[-1]
 
     def sample_recognition_dist(self, d, size = None):
@@ -158,7 +158,7 @@ class HelmholtzMachine(object):
         """
         if size is not None:
             d = np.tile(d, (size,1))
-        samples = _sample_layered_network(self.R, d)
+        samples = _sample_factorial_network(self.R, d)
         samples.reverse()
         return samples
 
@@ -167,7 +167,6 @@ class HelmholtzMachine(object):
         topology.
         """
         weights = []
-        topology = tuple(topology)
         for top, bottom in izip(topology, topology[1:]):
             weights.append(np.zeros((top + 1, bottom)))
         return weights
@@ -176,7 +175,7 @@ class HelmholtzMachine(object):
         """ The generative probabilities for each unit in the network, given a
         sample of the hidden units.
         """
-        probs = _probs_for_layered_network(self.G, samples)
+        probs = _probs_for_factorial_network(self.G, samples)
         probs.insert(0, sigmoid(self.G_bias))
         return probs
 
@@ -192,14 +191,14 @@ class HelmholtzMachine(object):
 
 # Helmholtz machine internals
 
-def _sample_layered_network(layers, s):
+def _sample_factorial_network(layers, s):
     samples = [ s ]
     for L in layers:
         s = sample_indicator(sigmoid(s.dot(L[:-1]) + L[-1]))
         samples.append(s)
     return samples
 
-def _probs_for_layered_network(layers, samples):
+def _probs_for_factorial_network(layers, samples):
     return [ sigmoid(s.dot(L[:-1]) + L[-1])
              for L, s in izip(layers, samples) ]
         
@@ -207,12 +206,12 @@ def _probs_for_layered_network(layers, samples):
 def _wake(world, G, G_bias, R, epsilon):
     # Sample data from the world.
     s = world()
-    samples = _sample_layered_network(R, s)
+    samples = _sample_factorial_network(R, s)
     samples.reverse()
         
     # Pass back down through the generation network and adjust weights.
     G_bias += epsilon[0] * (samples[0] - sigmoid(G_bias))
-    G_probs = _probs_for_layered_network(G, samples)
+    G_probs = _probs_for_factorial_network(G, samples)
     for G_weights, inputs, target, generated, step \
             in izip(G, samples, samples[1:], G_probs, epsilon[1:]):
         G_weights[:-1] += step * np.outer(inputs, target - generated)
@@ -222,11 +221,11 @@ def _wake(world, G, G_bias, R, epsilon):
 def _sleep(G, G_bias, R, epsilon):
     # Generate a dream.
     d = sample_indicator(sigmoid(G_bias))
-    dreams = _sample_layered_network(G, d)
+    dreams = _sample_factorial_network(G, d)
     dreams.reverse()
 
     # Pass back up through the recognition network and adjust weights.
-    R_probs = _probs_for_layered_network(R, dreams)
+    R_probs = _probs_for_factorial_network(R, dreams)
     for R_weights, inputs, target, recognized, step \
             in izip(R, dreams, dreams[1:], R_probs, epsilon[::-1]):
         R_weights[:-1] += step * np.outer(inputs, target - recognized)

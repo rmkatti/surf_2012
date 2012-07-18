@@ -17,19 +17,19 @@ class LadderedHelmholtzMachine(HelmholtzMachine):
         """ Create a laddered Helmholtz machine.
         """
         super(LadderedHelmholtzMachine, self).__init__(topology)
-        self.G_lateral = self._create_lateral_weights(topology)
+        self.G_lateral = self._create_lateral_weights(topology[1:-1]) + [None]
         self.G_bias_lateral = np.zeros((topology[0]-1, topology[0]-1))
-        self.R_lateral = self._create_lateral_weights(reversed(topology))
+        self.R_lateral = self._create_lateral_weights(topology[-2::-1])
 
     def sample_generative_dist(self, size = None, 
                                all_layers = False, top_units = None):
         """ Sample the generative distribution.
         """
+        d = self.G_bias if top_units is None else top_units
+        if size is not None:
+            d = np.tile(d, (size,1))
         if top_units is None:
-            d = _sample_laddered_bias(self.G_bias, self.G_bias_lateral, 
-                                      size=size)
-        else:
-            d = top_units if size is None else np.tile(top_units, (size,1))
+            d = _sample_laddered_layer(self.G_bias_lateral, d)
         samples = _sample_laddered_network(self.G, self.G_lateral, d)
         return samples if all_layers else samples[-1]
 
@@ -47,8 +47,12 @@ class LadderedHelmholtzMachine(HelmholtzMachine):
         sample of the hidden units.
         """
         probs = _probs_for_laddered_network(self.G, self.G_lateral, samples)
-        probs.insert(0, _probs_for_laddered_bias(
-                self.G_bias, self.G_bias_lateral, samples[0]))
+
+        s = samples[0]
+        p_in = np.tile(self.G_bias, s.shape[:-1] + (1,))
+        p = _probs_for_laddered_layer(self.G_bias_lateral, p_in, s)
+        probs.insert(0, p)
+
         return probs
 
     def _wake(self, world, epsilon):
@@ -69,49 +73,12 @@ class LadderedHelmholtzMachine(HelmholtzMachine):
         """ Create a list of lateral connection weight matrices for the given
         network topology.
         """
-        topology = tuple(topology)
-        return [ np.zeros((layer-1, layer-1)) for layer in topology[1:] ]
+        return [ np.zeros((layer-1, layer-1)) for layer in topology ]
 
 # Laddered Helmholtz machine internals
 
-def _sample_laddered_bias(bias, lateral, size=None):
-    shape = 1 if size is None else (size, 1)
-    s_in = np.tile(bias, shape)
-    s = np.empty(s_in.shape)
-    s[...,0] = sample_indicator(sigmoid(s_in[...,0]))
-    for i in range(1, s.shape[-1]):
-        s_in[...,i] += s[...,:i].dot(lateral[i-1,:i])
-        s[...,i] = sample_indicator(sigmoid(s_in[...,i]))
-    return s
-
-def _sample_laddered_network(layers, laterals, s):
-    samples = [ s ]
-    for layer, lateral in zip(layers, laterals):
-        s_in = s.dot(layer[:-1]) + layer[-1]
-        s = np.empty(s_in.shape)
-        s[...,0] = sample_indicator(sigmoid(s_in[...,0]))
-        for i in range(1, s.shape[-1]):
-            s_in[...,i] += s[...,:i].dot(lateral[i-1,:i])
-            s[...,i] = sample_indicator(sigmoid(s_in[...,i]))
-        samples.append(s)
-    return samples
-
-def _probs_for_laddered_bias(bias, lateral, s):
-    p_in = np.tile(bias, s.shape[:-1] + (1,))
-    for i in range(1, s.shape[-1]):
-        p_in[...,i] += s[...,:i].dot(lateral[i-1,:i])
-    return sigmoid(p_in)
-
-def _probs_for_laddered_network(layers, laterals, samples):
-    probs = []
-    s_prev = samples[0]
-    for layer, lateral, s in zip(layers, laterals, samples[1:]):
-        p_in = s_prev.dot(layer[:-1]) + layer[-1]
-        for i in range(1, s.shape[-1]):
-            p_in[...,i] += s[...,:i].dot(lateral[i-1,:i])
-        p = sigmoid(p_in)
-        s_prev = s
-        probs.append(p)
-    return probs
-
-from _helmholtz_laddered import _wake, _sleep
+from _helmholtz_laddered import (
+    _sample_laddered_layer, _sample_laddered_network, 
+    _probs_for_laddered_layer, _probs_for_laddered_network,
+    _wake, _sleep,
+)

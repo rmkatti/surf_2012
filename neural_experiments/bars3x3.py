@@ -17,7 +17,7 @@ class Bars3x3Runner(BenchmarkRunner):
     cls = HelmholtzMachine
     topology = [1, 6, 9]
     epsilon = 0.1
-    anneal = 1e-4
+    anneal = 1e-5
     maxiter = 80000
     yield_at = 500
 
