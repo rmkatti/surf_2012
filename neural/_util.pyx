@@ -3,6 +3,8 @@ include "external/numpy_ufuncs.pxi"
 cdef extern from "math.h":
     double exp(double)
     float expf(float)
+    double log(double)
+    float logf(float)
 
 cdef extern from "gsl/gsl_rng.h":
     ctypedef struct gsl_rng_type
@@ -12,6 +14,17 @@ cdef extern from "gsl/gsl_rng.h":
     double gsl_rng_uniform(gsl_rng * r)
 
 cdef gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937)
+
+cdef float logit_f(float p):
+    return logf(p / (1.0 - p))
+
+cdef double logit_d(double p):
+    return log(p / (1.0 - p))
+
+logit = register_ufunc_fd(logit_f, logit_d, 'logit', '''\
+The standard logit (log-odds) function, the inverse of the logistic (sigmoid)
+function.
+''')
 
 cdef float logistic_f(float x):
     return 1.0 / (1.0 + expf(-x))

@@ -39,9 +39,13 @@ def count_bit_vectors(v):
 # Math functions.
 
 try:
-    from _util import logistic, sigmoid, sample_indicator
+    from _util import logit, logistic, sigmoid, sample_indicator
 except ImportError:
     print 'WARNING: Optimized math functions not available.'
+
+    def logit(p):
+        """ The standard logit (log-odds) function. """
+        return np.log(p / (1-p))
 
     def logistic(x):
         """ The standard logistic (sigmoid) function. """
