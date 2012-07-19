@@ -53,7 +53,7 @@ class Runner(HasTraits):
     def save(self, filename = None):
         """ Convenience method to save the Runner using neural.serialize.
         """
-        from neural.serialize import save
+        from neural.utils.serialize import save
         if filename:
             self.filename = filename
         elif not self.filename:

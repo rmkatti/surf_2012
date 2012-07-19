@@ -1,4 +1,4 @@
-include "external/numpy_ufuncs.pxi"
+include "../external/numpy_ufuncs.pxi"
 
 cdef extern from "math.h":
     double exp(double)

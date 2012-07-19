@@ -3,7 +3,7 @@ import numpy as np
 from numpy.testing import assert_equal
 
 # Local imports.
-from neural.util import bit_vector_from_str, bit_vector_to_str, \
+from neural.utils.bit_vector import bit_vector_from_str, bit_vector_to_str, \
     count_bit_vectors
 
 

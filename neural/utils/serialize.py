@@ -8,7 +8,7 @@ import jsonpickle
 import numpy as np
 
 # Local imports.
-from util import memoize
+from decorators import memoize
 
 # Exported functions.
 encode = jsonpickle.encode

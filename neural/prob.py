@@ -9,7 +9,8 @@ import numpy as np
 from scipy.stats import rv_discrete
 
 # Local imports.
-from util import bit_vector_to_str, bit_vector_from_str, count_bit_vectors
+from utils.bit_vector import bit_vector_to_str, bit_vector_from_str, \
+    count_bit_vectors
 
 
 class rv_bit_vector(object):

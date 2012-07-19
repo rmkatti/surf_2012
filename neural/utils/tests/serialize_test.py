@@ -3,7 +3,7 @@ import numpy as np
 from numpy.testing import assert_equal
 
 # Local imports.
-from neural.serialize import encode, decode
+from neural.utils.serialize import encode, decode
 
 
 def test_serialize_array():

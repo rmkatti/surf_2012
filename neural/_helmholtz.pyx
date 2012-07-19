@@ -3,7 +3,7 @@ cimport numpy as np
 
 from neural.external import tokyo
 from neural.external cimport tokyo
-from util import sample_indicator, sigmoid
+from neural.utils.math import sample_indicator, sigmoid
 
 
 def _wake(world, G, G_bias, R, epsilon):

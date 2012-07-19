@@ -7,8 +7,8 @@ cimport numpy as np
 from neural.external import tokyo
 from neural.external cimport tokyo
 
-from util import sample_indicator, sigmoid
-from _util cimport sample_indicator_d, logistic_d
+from neural.utils.math import sample_indicator, sigmoid
+from neural.utils._math cimport sample_indicator_d, logistic_d
 
 
 cdef _sample_laddered_layer_1d(np.ndarray[np.double_t, ndim=2] lateral,

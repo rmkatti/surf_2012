@@ -5,7 +5,7 @@ from itertools import izip
 import numpy as np
 
 # Local imports.
-from util import sample_indicator, sigmoid
+from utils.math import sample_indicator, sigmoid
 
 # Helmholtz machine public API
 
