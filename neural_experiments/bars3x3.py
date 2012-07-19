@@ -17,7 +17,7 @@ class Bars3x3Runner(BenchmarkRunner):
     cls = HelmholtzMachine
     topology = [1, 6, 9]
     epsilon = 0.1
-    anneal = 5e-5
+    anneal = 2.5e-5
     maxiter = 80000
     yield_at = 500
 
@@ -49,7 +49,7 @@ def main(args = None):
     import matplotlib.pyplot as plt
 
     runner = Bars3x3Runner()
-    runner.main(args=args)    
+    runner.main(args=args)
     iters, kl = runner.iters, runner.kl
 
     print 'Final KL divergence:', kl[-1]
