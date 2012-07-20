@@ -3,9 +3,10 @@ import datetime
 
 # System library imports.
 from traits.api import HasTraits, BaseInstance, Either, File, Float, Int, \
-    List, Type
+    List, Str, Type
 
 # Local imports.
+from neural.utils.io import redirect_output
 import traits_argparse
 
 # Trait definitions.
@@ -23,27 +24,31 @@ class Runner(HasTraits):
     start_time = Datetime
     end_time = Datetime
     duration = Float
+    output = Str
 
-    def main(self, args=None):
-        """ Convenience 'main' method to execute to runner.
+    def main(self, args = None):
+        """ Convenience 'main' method to execute the runner.
         """
         parser = traits_argparse.make_arg_parser(self)
         parser.parse_args(args)
         self.start()
+        print self.output
         if self.filename:
             self.save()
 
     def start(self):
-        """ Execute the runner and store some generic statistics.
+        """ Execute the runner and store some generic information.
 
         Typically, subclasses should override the 'run' method, not this method.
         """
         self.start_time = datetime.datetime.now()
         try:
-            return self.run()
+            with redirect_output() as io:
+                return self.run()
         finally:
             self.end_time = datetime.datetime.now()
             self.duration = (self.end_time - self.start_time).total_seconds()
+            self.output = io.getvalue()
 
     def run(self):
         """ Abstract method. Should be implemented by subclasses.

@@ -9,6 +9,7 @@ import numpy as np
 
 # Local imports.
 from decorators import memoize
+from io import open_filename
 
 # Exported functions.
 encode = jsonpickle.encode
@@ -25,25 +26,6 @@ def save(filename, obj):
     """
     with open_filename(filename, 'w') as fh:
         return fh.write(encode(obj))
-
-class open_filename(object):
-    """ A context manager that opens files but passes through file-like objects.
-    """
-    def __init__(self, filename, *args, **kwargs):
-        self.is_filename = isinstance(filename, basestring)
-        if self.is_filename:
-            filename = os.path.expanduser(filename)
-            self.fh = open(filename, *args, **kwargs)
-        else:
-            self.fh = filename
-
-    def __enter__(self):
-        return self.fh
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        if self.is_filename:
-            self.fh.close()
-        return False
 
 # Monkey-patch jsonpickle. The existing implementations of these methods check
 # whether the obj is strictly of the specified type, e.g. whether ``type(obj) is
