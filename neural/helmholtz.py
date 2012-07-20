@@ -20,8 +20,8 @@ class HelmholtzMachine(object):
         -----------
         topology : sequence of ints
             The topology of the network. Gives the node count for each layer in
-            "top-to-bottom" order. That is, the head of the sequence specifies
-            the generative bias nodes, while the last element of the sequence
+            top-to-bottom order. That is, the head of the sequence specifies the
+            generative bias nodes, while the last element of the sequence
             specifies the input nodes.
         """
         self.topology = list(topology)

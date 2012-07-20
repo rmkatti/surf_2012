@@ -1,3 +1,6 @@
+# Standard library imports.
+from itertools import izip
+
 # System library imports.
 import numpy as np
 
@@ -13,22 +16,36 @@ class LadderedHelmholtzMachine(HelmholtzMachine):
 
     # HelmholtzMachine interface
     
-    def __init__(self, topology, ladder_len=5):
+    def __init__(self, topology, ladder_len=None):
         """ Create a laddered Helmholtz machine.
+
+        Parameters:
+        -----------
+        topology : sequence of ints
+            See HelmholtzMachine.
+
+        ladder_len : int or sequence of ints, optional
+            The (maximum) length of the ladders for the nodes in each layer, in
+            top-to-bottom order. If not specified, each hidden layer is fully
+            laterally connected, while the visible layer has no lateral
+            connections (in the generative model).
         """
         super(LadderedHelmholtzMachine, self).__init__(topology)
 
-        if np.isscalar(ladder_len):
+        if ladder_len is None:
+            self.G_ladder_len = np.array(list(topology[:-1]) + [0])
+        elif np.isscalar(ladder_len):
             self.G_ladder_len = np.repeat(ladder_len, len(topology))
         elif len(ladder_len) == len(topology):
             self.G_ladder_len = np.ndarray(ladder_len)
         else:
             raise ValueError("'topology' and 'ladder_len' have unequal length")
-        self.R_ladder_len = self.G_ladder_len[::-1]
-
-        self.G_lateral = self._create_lateral_weights(topology[1:-1]) + [None]
-        self.G_bias_lateral = np.zeros((topology[0]-1, topology[0]-1))
-        self.R_lateral = self._create_lateral_weights(topology[-2::-1])
+        self.R_ladder_len = self.G_ladder_len[-2::-1]
+        
+        G_laterals = self._create_lateral_weights(topology, self.G_ladder_len)
+        self.G_bias_lateral, self.G_lateral = G_laterals[0], G_laterals[1:]
+        self.R_lateral = self._create_lateral_weights(topology[-2::-1],
+                                                      self.R_ladder_len)
 
     def sample_generative_dist(self, size = None, 
                                all_layers = False, top_units = None):
@@ -50,7 +67,7 @@ class LadderedHelmholtzMachine(HelmholtzMachine):
         if size is not None:
             d = np.tile(d, (size,1))
         samples = _sample_laddered_network(self.R, self.R_lateral,
-                                           self.R_ladder_len[1:], d)
+                                           self.R_ladder_len, d)
         samples.reverse()
         return samples
 
@@ -83,11 +100,15 @@ class LadderedHelmholtzMachine(HelmholtzMachine):
 
     # LadderedHelmholtzMachine interface
 
-    def _create_lateral_weights(self, topology):
+    def _create_lateral_weights(self, topology, lateral_lens):
         """ Create a list of lateral connection weight matrices for the given
         network topology.
         """
-        return [ np.zeros((layer-1, layer-1)) for layer in topology ]
+        laterals = []
+        for layer, lateral_len in izip(topology, lateral_lens):
+            lateral = np.zeros((layer-1, layer-1)) if lateral_len else None
+            laterals.append(lateral)
+        return laterals
 
 # Laddered Helmholtz machine internals
 
@@ -104,7 +125,7 @@ def _sample_laddered_layer(lateral, ladder_len, s_in):
 
 def _sample_laddered_network(layers, laterals, ladder_lens, s):
     samples = [ s ]
-    for layer, lateral, ladder_len in zip(layers, laterals, ladder_lens):
+    for layer, lateral, ladder_len in izip(layers, laterals, ladder_lens):
         s_in = s.dot(layer[:-1]) + layer[-1]
         s = _sample_laddered_layer(lateral, ladder_len, s_in)
         samples.append(s)
@@ -121,7 +142,7 @@ def _probs_for_laddered_network(layers, laterals, ladder_lens, samples):
     probs = []
     s_prev = samples[0]
     for layer, lateral, ladder_len, s in \
-            zip(layers, laterals, ladder_lens, samples[1:]):
+            izip(layers, laterals, ladder_lens, samples[1:]):
         p_in = s_prev.dot(layer[:-1]) + layer[-1]
         p = _probs_for_laddered_layer(lateral, ladder_len, p_in, s)
         probs.append(p)

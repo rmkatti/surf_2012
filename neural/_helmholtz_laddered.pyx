@@ -75,7 +75,7 @@ def _wake(world, G, G_bias, R, G_lateral, G_bias_lateral, R_lateral,
           G_ladder_len, R_ladder_len, epsilon):
     # Sample data from the world.
     s = np.array(world(), copy=0, dtype=np.double)
-    samples = _sample_laddered_network_1d(R, R_lateral, R_ladder_len[1:], s)
+    samples = _sample_laddered_network_1d(R, R_lateral, R_ladder_len, s)
     samples.reverse()
     
     # Pass back down through the generation network and adjust weights.
@@ -103,9 +103,9 @@ def _sleep(G, G_bias, R, G_lateral, G_bias_lateral, R_lateral,
 
     # Pass back up through the recognition network and adjust weights.
     R_probs = _probs_for_laddered_network_1d(R, R_lateral,
-                                             R_ladder_len[1:], dreams)
+                                             R_ladder_len, dreams)
     for layer, lateral, ladder_len, inputs, target, recognized, step \
-            in zip(R, R_lateral, R_ladder_len[1:], dreams, dreams[1:], 
+            in zip(R, R_lateral, R_ladder_len, dreams, dreams[1:], 
                    R_probs, epsilon[::-1]):
         tokyo.dger4(step, inputs, target - recognized, layer[:-1])
         layer[-1] += step * (target - recognized)
