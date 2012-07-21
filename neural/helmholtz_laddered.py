@@ -37,7 +37,7 @@ class LadderedHelmholtzMachine(HelmholtzMachine):
         elif np.isscalar(ladder_len):
             self.G_ladder_len = np.repeat(ladder_len, len(topology))
         elif len(ladder_len) == len(topology):
-            self.G_ladder_len = np.ndarray(ladder_len)
+            self.G_ladder_len = np.array(ladder_len)
         else:
             raise ValueError("'topology' and 'ladder_len' have unequal length")
         self.R_ladder_len = self.G_ladder_len[-2::-1]
