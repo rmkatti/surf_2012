@@ -70,7 +70,7 @@ class NeuralRunner(Runner):
     """ The base runner class for a neural network simulation.
     """
     # Configuration.
-    cls = Type(config=True)
+    cls = Type(config=True, config_default_module='neural.api')
     topology = List(Int, config=True)
 
     epsilon = Either(Float, List(Float), config=True, default=0.01)

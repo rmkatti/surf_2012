@@ -18,16 +18,22 @@ def make_arg_parser(config_obj, *args, **kwds):
         parse = trait.config_parse
         if parse is None:
             parse = parser_registry.lookup(trait)
-        def convert(val, parse=parse, trait=trait):
-            return parse(trait, val)
-        parser.add_argument('--' + name, help=trait.desc, type=convert,
-                            action=RunConfigAction)
+       
+        action = parser.add_argument('--' + name, help=trait.desc,
+                                     action=TraitsConfigAction)
+        action.parse = parse
+        action.trait = trait
 
     return parser
         
-class RunConfigAction(argparse.Action):
-    def __call__(self, parser, namespace, values, option_string=None):
-        setattr(parser.config_obj, self.dest, values)
+class TraitsConfigAction(argparse.Action):
+
+    def __call__(self, parser, namespace, value, option_string=None):
+        try:
+            value = self.parse(self.trait, value)
+            setattr(parser.config_obj, self.dest, value)
+        except Exception, exc:
+            raise argparse.ArgumentError(self, str(exc))
 
 # Built-in string->value parsers.
 
@@ -53,15 +59,21 @@ def parse_compound(trait, value):
     # FIXME: better error reporting here.
     raise ValueError('Cannot parse string %r for compound trait.' % value)
 
+def parse_import(trait, value):
+    split = value.rsplit('.', 1)
+    if len(split) == 2:
+        module, name = split
+    elif trait.config_default_module:
+        module, name = trait.config_default_module, split[0]
+    else:
+        raise ValueError('No module in import string %r.' % value)
+    __import__(module)
+    return getattr(sys.modules[module], name)
+
 def parse_list(trait, value):
     subtrait = get_trait_type(trait).item_trait
     parse_item = parser_registry.lookup(subtrait)
     return [ parse_item(subtrait, item) for item in _parse_sequence(value) ]
-
-def parse_type(trait, value):
-    module, name = value.rsplit('.', 1)
-    __import__(module)
-    return getattr(sys.modules[module], name)
 
 def _parse_sequence(value):
     return [ item.strip() for item in value.strip('[]()').split(',') ]
@@ -105,4 +117,4 @@ parser_registry.add(BaseStr, null_parse)
 parser_registry.add(BaseUnicode, null_parse)
 parser_registry.add(List, parse_list)
 parser_registry.add(TraitCompound, parse_compound)
-parser_registry.add(Type, parse_type)
+parser_registry.add(Type, parse_import)
