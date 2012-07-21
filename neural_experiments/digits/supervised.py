@@ -37,7 +37,7 @@ class SupervisedDigitsRunner(NeuralRunner):
         machines = {}
         for digit in self.digits:
             world = shuffled_iter(imgs[labels == digit])
-            machine = machines[digit] = self.cls(topology = self.topology)
+            machine = machines[digit] = self.create_machine()
             machine.train(world.next, 
                           epsilon = self.epsilon, anneal = self.anneal,
                           maxiter = self.maxiter)

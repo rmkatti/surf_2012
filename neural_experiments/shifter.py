@@ -31,7 +31,7 @@ class ShifterRunner(NeuralRunner):
         return [2, 24, 4 * self.bits]
 
     def run(self):
-        self.machine = machine = self.cls(topology = self.topology)
+        self.machine = machine = self.create_machine()
         machine.train(self.sample_world, epsilon=self.epsilon, 
                       anneal=self.anneal, maxiter=self.maxiter)
 

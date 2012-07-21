@@ -18,7 +18,7 @@ class Runner(HasTraits):
     """ The base runner class.
     """
     # Configuration.
-    filename = File(config=True, transient=True)
+    outfile = File(config=True, transient=True, desc='filename for run output')
 
     # Information.
     start_time = Datetime
@@ -33,7 +33,7 @@ class Runner(HasTraits):
         parser.parse_args(args)
         self.start()
         print self.output
-        if self.filename:
+        if self.outfile:
             self.save()
 
     def start(self):
@@ -60,19 +60,31 @@ class Runner(HasTraits):
         """
         from neural.utils.serialize import save
         if filename:
-            self.filename = filename
-        elif not self.filename:
+            self.outfile = filename
+        elif not self.outfile:
             raise ValueError('No filename specified or set.')
-        save(self.filename, self)
+        save(self.outfile, self)
 
 
 class NeuralRunner(Runner):
     """ The base runner class for a neural network simulation.
     """
     # Configuration.
-    cls = Type(config=True, config_default_module='neural.api')
-    topology = List(Int, config=True)
+    cls = Type(config=True, config_default_module='neural.api',
+               desc="class of the machine, e.g. 'LadderedHelmholtzMachine' " \
+                   "or 'my_package.custom_machine.CustomMachine'")
+    topology = List(Int, config=True, desc='layer topology of network')
+    ladder_len = Either(Int, List(Int), config=True, default=[],
+                        desc='lateral topology of network')
 
-    epsilon = Either(Float, List(Float), config=True, default=0.01)
-    anneal = Either(Float, List(Float), config=True, default=0)
-    maxiter = Int(config=True)
+    epsilon = Either(Float, List(Float), config=True, default=0.01,
+                     desc="learning rate")
+    anneal = Either(Float, List(Float), config=True, default=0,
+                    desc="parameter for anealing schedule '" \
+                        "epsilon = epsilon_0 / (1 + aneal * t)', " \
+                        "where t is the current iteration")
+    maxiter = Int(config=True, desc='number of iterations during learning')
+
+    def create_machine(self):
+        return self.cls(topology = self.topology,
+                        ladder_len = self.ladder_len)

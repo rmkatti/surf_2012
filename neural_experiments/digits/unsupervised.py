@@ -31,7 +31,7 @@ class UnsupervisedDigitsRunner(NeuralRunner):
         labels = labels[idx]
 
         world = shuffled_iter(imgs, copy=False)
-        self.machine = self.cls(topology = self.topology)
+        self.machine = self.create_machine()
         self.machine.train(world.next, 
                            epsilon = self.epsilon, anneal = self.anneal,
                            maxiter = self.maxiter)

@@ -25,7 +25,7 @@ class BenchmarkRunner(NeuralRunner):
     # BaseNeuralRunner interface.
     
     def run(self):
-        self.machine = machine = self.cls(topology = self.topology)
+        self.machine = machine = self.create_machine()
 
         iters, kl = [], []
         def update_kl(i):

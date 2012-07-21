@@ -13,7 +13,7 @@ class HelmholtzMachine(object):
     """ A classic Helmholtz machine.
     """
     
-    def __init__(self, topology):
+    def __init__(self, topology, **kwds):
         """ Create a Helmholtz machine.
 
         Parameters:

@@ -16,7 +16,7 @@ class LadderedHelmholtzMachine(HelmholtzMachine):
 
     # HelmholtzMachine interface
     
-    def __init__(self, topology, ladder_len=None):
+    def __init__(self, topology, ladder_len=None, **kwds):
         """ Create a laddered Helmholtz machine.
 
         Parameters:
@@ -30,9 +30,9 @@ class LadderedHelmholtzMachine(HelmholtzMachine):
             laterally connected, while the visible layer has no lateral
             connections (in the generative model).
         """
-        super(LadderedHelmholtzMachine, self).__init__(topology)
+        super(LadderedHelmholtzMachine, self).__init__(topology, **kwds)
 
-        if ladder_len is None:
+        if ladder_len is None or ladder_len == []:
             self.G_ladder_len = np.array(list(topology[:-1]) + [0])
         elif np.isscalar(ladder_len):
             self.G_ladder_len = np.repeat(ladder_len, len(topology))
