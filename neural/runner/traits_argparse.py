@@ -14,15 +14,17 @@ def make_arg_parser(config_obj, *args, **kwds):
     parser = argparse.ArgumentParser(*args, **kwds)
     parser.config_obj = config_obj
 
-    for name, trait in config_obj.traits(config=True).iteritems():
+    traits = config_obj.traits(config=True)
+    names = sorted(traits.iterkeys())
+    for name in names:
+        trait = traits[name]
         parse = trait.config_parse
         if parse is None:
             parse = parser_registry.lookup(trait)
        
         action = parser.add_argument('--' + name, help=trait.desc,
                                      action=TraitsConfigAction)
-        action.parse = parse
-        action.trait = trait
+        action.parse, action.trait = parse, trait
 
     return parser
         
