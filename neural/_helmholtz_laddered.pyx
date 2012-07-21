@@ -72,7 +72,7 @@ cdef _update_lateral_weights(np.ndarray[np.double_t, ndim=2] lateral,
                              np.ndarray[np.double_t, ndim=1] probs,
                              double step):
     cdef int i, j
-    if lateral is not None:
+    if ladder_len != 0:
         for i in range(1, target.shape[0]):
             for j in range(max(0, i - ladder_len), i):
                 lateral[i-1,j] += step * (target[i] - probs[i]) * target[j]

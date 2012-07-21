@@ -3,8 +3,8 @@ import numpy as np
 from traits.api import Any, File, Int, List
 
 # Local imports.
-from neural.helmholtz import HelmholtzMachine
-from neural.runner.runner import NeuralRunner
+from neural.api import HelmholtzMachine
+from neural.runner.api import NeuralRunner
 from mnist import read_mnist
 from util import prepare_mnist_images, shuffled_iter
 

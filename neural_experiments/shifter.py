@@ -10,8 +10,8 @@ import numpy as np
 from traits.api import Any, Int
 
 # Local imports.
-from neural.helmholtz import HelmholtzMachine
-from neural.runner.runner import NeuralRunner
+from neural.api import HelmholtzMachine
+from neural.runner.api import NeuralRunner
 
 
 class ShifterRunner(NeuralRunner):
@@ -50,7 +50,7 @@ def estimate_most_probable(machine, n=10):
     return zip(samples[idx[:n]], probs[idx[:n]])
 
 def main(args = None):
-    from neural.ui.helmholtz_vis import HelmholtzVis
+    from neural.ui.api import HelmholtzVis
 
     runner = ShifterRunner()
     runner.main(args=args)

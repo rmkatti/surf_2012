@@ -6,9 +6,8 @@ This example is used in Kevin Kirby's 'Tutorial on Helmholtz Machines'.
 import numpy as np
 
 # Local imports.
-from neural.runner.benchmark import BenchmarkRunner
-from neural.helmholtz import HelmholtzMachine
-from neural.prob import rv_bit_vector
+from neural.api import HelmholtzMachine, rv_bit_vector
+from neural.runner.api import BenchmarkRunner
 
 
 class Bars3x3Runner(BenchmarkRunner):
