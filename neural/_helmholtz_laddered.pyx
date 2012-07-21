@@ -17,15 +17,15 @@ cdef _sample_laddered_layer_1d(np.ndarray[np.double_t, ndim=2] lateral,
     cdef int i, j
     cdef np.ndarray[np.double_t, ndim=1] s
 
-    if lateral is None:
+    if ladder_len == 0:
         return sample_indicator(sigmoid(s_in))
 
-    s = np.empty(s_in.shape[0])
-    s[0] = sample_indicator_d(logistic_d(s_in[0]))
+    s = s_in.copy()
+    s[0] = sample_indicator_d(logistic_d(s[0]))
     for i in range(1, s.shape[0]):
         for j in range(max(0, i - ladder_len), i):
-            s_in[i] += lateral[i-1,j] * s[j]
-        s[i] = sample_indicator_d(logistic_d(s_in[i]))
+            s[i] += lateral[i-1,j] * s[j]
+        s[i] = sample_indicator_d(logistic_d(s[i]))
     return s
 
 cdef _sample_laddered_network_1d(layers, laterals, ladder_lens, s):
@@ -41,11 +41,18 @@ cdef _probs_for_laddered_layer_1d(np.ndarray[np.double_t, ndim=2] lateral,
                                   np.ndarray[np.double_t, ndim=1] p_in, 
                                   np.ndarray[np.double_t, ndim=1] s):
     cdef int i, j
-    if lateral is not None:
-        for i in range(1, s.shape[0]):
-            for j in range(max(0, i - ladder_len), i):
-                p_in[i] += lateral[i-1,j] * s[j]
-    return sigmoid(p_in)
+    cdef np.ndarray[np.double_t, ndim=1] p
+
+    if ladder_len == 0:
+        return sigmoid(p_in)
+    
+    p = p_in.copy()
+    p[0] = logistic_d(p[0])
+    for i in range(1, s.shape[0]):
+        for j in range(max(0, i - ladder_len), i):
+            p[i] += lateral[i-1,j] * s[j]
+        p[i] = logistic_d(p[i])
+    return p
 
 cdef _probs_for_laddered_network_1d(layers, laterals, ladder_lens, samples):
     probs = []

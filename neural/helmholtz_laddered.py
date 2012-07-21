@@ -113,14 +113,15 @@ class LadderedHelmholtzMachine(HelmholtzMachine):
 # Laddered Helmholtz machine internals
 
 def _sample_laddered_layer(lateral, ladder_len, s_in):
-    if lateral is None:
+    if ladder_len == 0:
         return sample_indicator(sigmoid(s_in))
-    s = np.empty(s_in.shape)
-    s[...,0] = sample_indicator(sigmoid(s_in[...,0]))
+
+    s = s_in.copy()
+    s[...,0] = sample_indicator(sigmoid(s[...,0]))
     for i in range(1, s.shape[-1]):
         start = max(0, i - ladder_len)
-        s_in[...,i] += s[...,start:i].dot(lateral[i-1,start:i])
-        s[...,i] = sample_indicator(sigmoid(s_in[...,i]))
+        s[...,i] += s[...,start:i].dot(lateral[i-1,start:i])
+        s[...,i] = sample_indicator(sigmoid(s[...,i]))
     return s
 
 def _sample_laddered_network(layers, laterals, ladder_lens, s):
@@ -132,11 +133,14 @@ def _sample_laddered_network(layers, laterals, ladder_lens, s):
     return samples
 
 def _probs_for_laddered_layer(lateral, ladder_len, p_in, s):
-    if lateral is not None:
-        for i in range(1, s.shape[-1]):
-            start = max(0, i - ladder_len)
-            p_in[...,i] += s[...,start:i].dot(lateral[i-1,start:i])
-    return sigmoid(p_in)
+    if ladder_len == 0:
+        return sigmoid(p_in)
+
+    p = p_in.copy()
+    for i in range(1, s.shape[-1]):
+        start = max(0, i - ladder_len)
+        p[...,i] += s[...,start:i].dot(lateral[i-1,start:i])
+    return sigmoid(p, out=p)
 
 def _probs_for_laddered_network(layers, laterals, ladder_lens, samples):
     probs = []
