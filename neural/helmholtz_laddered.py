@@ -63,8 +63,8 @@ class LadderedHelmholtzMachine(HelmholtzMachine):
         """
         if top_units is None:
             width = self.G_lateral[0].shape[0]
-            d_in = np.zeros(width if size is None else (size, width))
-            d = _sample_laddered_layer(self.G_lateral[0], d_in)
+            d = np.zeros(width if size is None else (size, width))
+            _sample_laddered_layer(self.G_lateral[0], d)
         else:
             d = top_units if size is None else np.tile(top_units, (size,1))
         samples = _sample_laddered_network(self.G, self.G_lateral[1:], d)
@@ -84,8 +84,8 @@ class LadderedHelmholtzMachine(HelmholtzMachine):
         sample of the hidden units.
         """
         probs = _probs_for_laddered_network(self.G, self.G_lateral[1:], samples)
-        p_in = np.zeros(samples[0].shape)
-        p = _probs_for_laddered_layer(self.G_lateral[0], p_in, samples[0])
+        p = np.zeros(samples[0].shape)
+        _probs_for_laddered_layer(self.G_lateral[0], samples[0], p)
         probs.insert(0, p)
         return probs
 
@@ -133,8 +133,7 @@ class LadderedHelmholtzMachine(HelmholtzMachine):
 
 # Laddered Helmholtz machine internals
 
-def _sample_laddered_layer(lateral, s_in):
-    s = s_in
+def _sample_laddered_layer(lateral, s):
     s[...,:] += lateral[:,0]
     s[...,0] = sample_indicator(sigmoid(s[...,0]))
     for i in range(1, s.shape[-1]):
@@ -146,13 +145,12 @@ def _sample_laddered_layer(lateral, s_in):
 def _sample_laddered_network(layers, laterals, s):
     samples = [ s ]
     for layer, lateral, in izip(layers, laterals):
-        s_in = s.dot(layer)
-        s = _sample_laddered_layer(lateral, s_in)
+        s = s.dot(layer)
+        _sample_laddered_layer(lateral, s)
         samples.append(s)
     return samples
 
-def _probs_for_laddered_layer(lateral, p_in, s):
-    p = p_in
+def _probs_for_laddered_layer(lateral, s, p):
     p[...,:] += lateral[:,0]
     for i in range(1, s.shape[-1]):
         j = min(i, lateral.shape[1])
@@ -163,8 +161,8 @@ def _probs_for_laddered_network(layers, laterals, samples):
     probs = []
     s_prev = samples[0]
     for layer, lateral, s in izip(layers, laterals, samples[1:]):
-        p_in = s_prev.dot(layer)
-        p = _probs_for_laddered_layer(lateral, p_in, s)
+        p = s_prev.dot(layer)
+        _probs_for_laddered_layer(lateral, s, p)
         probs.append(p)
         s_prev = s
     return probs

@@ -12,9 +12,8 @@ from neural.utils._math cimport sample_indicator_d, logistic_d
 
 
 cdef _sample_laddered_layer_1d(np.ndarray[np.double_t, ndim=2] lateral,
-                               np.ndarray[np.double_t, ndim=1] s_in):
+                               np.ndarray[np.double_t, ndim=1] s):
     cdef int i, j
-    cdef np.ndarray[np.double_t, ndim=1] s = s_in
     for i in range(s.shape[0]):
         s[i] += lateral[i,0]
         for j in range(1, min(i, lateral.shape[1])):
@@ -25,16 +24,15 @@ cdef _sample_laddered_layer_1d(np.ndarray[np.double_t, ndim=2] lateral,
 cdef _sample_laddered_network_1d(layers, laterals, s):
     samples = [ s ]
     for layer, lateral in zip(layers, laterals):
-        s_in = s.dot(layer)
-        s = _sample_laddered_layer_1d(lateral, s_in)
+        s = s.dot(layer)
+        _sample_laddered_layer_1d(lateral, s)
         samples.append(s)
     return samples
 
 cdef _probs_for_laddered_layer_1d(np.ndarray[np.double_t, ndim=2] lateral, 
-                                  np.ndarray[np.double_t, ndim=1] p_in, 
-                                  np.ndarray[np.double_t, ndim=1] s):
+                                  np.ndarray[np.double_t, ndim=1] s,
+                                  np.ndarray[np.double_t, ndim=1] p): 
     cdef int i, j
-    cdef np.ndarray[np.double_t, ndim=1] p = p_in
     for i in range(s.shape[0]):
         p[i] += lateral[i,0]
         for j in range(1, min(i, lateral.shape[1])):
@@ -46,8 +44,8 @@ cdef _probs_for_laddered_network_1d(layers, laterals, samples):
     probs = []
     s_prev = samples[0]
     for layer, lateral, s in zip(layers, laterals, samples[1:]):
-        p_in = s_prev.dot(layer)
-        p = _probs_for_laddered_layer_1d(lateral, p_in, s)
+        p = s_prev.dot(layer)
+        _probs_for_laddered_layer_1d(lateral, s, p)
         probs.append(p)
         s_prev = s
     return probs
@@ -72,7 +70,8 @@ def _wake(world, G, G_lateral, R, R_lateral, epsilon):
     
     # Pass back down through the generation network and adjust weights.
     s = samples[0]
-    generated = _probs_for_laddered_layer_1d(G_lateral[0], np.zeros(s.size), s)
+    generated = np.zeros(s.size)
+    _probs_for_laddered_layer_1d(G_lateral[0], s, generated)
     _update_lateral_weights(G_lateral[0], s, generated, epsilon[0])
 
     G_probs = _probs_for_laddered_network_1d(G, G_lateral[1:], samples)
@@ -83,7 +82,8 @@ def _wake(world, G, G_lateral, R, R_lateral, epsilon):
 
 def _sleep(G, G_lateral, R, R_lateral, epsilon):
     # Generate a dream.
-    d = _sample_laddered_layer_1d(G_lateral[0], np.zeros(G_lateral[0].shape[0]))
+    d = np.zeros(G_lateral[0].shape[0])
+    _sample_laddered_layer_1d(G_lateral[0], d)
     dreams = _sample_laddered_network_1d(G, G_lateral[1:], d)
     dreams.reverse()
 
