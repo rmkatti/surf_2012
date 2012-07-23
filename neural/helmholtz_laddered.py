@@ -54,8 +54,9 @@ class LadderedHelmholtzMachine(HelmholtzMachine):
         self.R_lateral = self._create_lateral_weights(topology[-2::-1],
                                                       self.R_ladder_len)
 
-        #self.G_bias_mean, self.G_bias_lateral_mean, self.G_bias_var = \
-        #    self._create_lateral_prior(topology[0], 4.0)
+        var_0 = 4.0
+        top_mean, top_var = self._create_lateral_prior(topology[0], var_0)
+        self.G_mean, self.G_var = [ top_mean ], [ top_var ]
 
     def sample_generative_dist(self, size = None, 
                                all_layers = False, top_units = None):
@@ -92,36 +93,40 @@ class LadderedHelmholtzMachine(HelmholtzMachine):
     def _wake(self, world, epsilon):
         """ Run a wake cycle.
         """
-        return _wake(world, self.G, self.G_lateral, self.R, self.R_lateral,
-                     epsilon)
+        return _wake(world, self.G, self.G_lateral, self.G_mean, self.G_var, 
+                     self.R, self.R_lateral, epsilon)
 
     def _sleep(self, epsilon):
         """ Run a sleep cycle.
         """
-        return _sleep(self.G, self.G_lateral, self.R, self.R_lateral, epsilon)
+        return _sleep(self.G, self.G_lateral, self.G_mean, self.G_var,
+                      self.R, self.R_lateral, epsilon)
 
     # LadderedHelmholtzMachine interface
 
-    def _create_lateral_prior(self, length, var_0):
+    def _create_lateral_prior(self, n, var_0):
         """
         """
-        n = length
         i = np.arange(1, n+1, dtype=float)
         probs = np.reciprocal(i[::-1])
         probs[-1] -= 1e-4
         bias_mean = logit(probs)
         lateral_mean = -(bias_mean[1:] - bias_mean[0]) * n / (i[1:]-1)
 
-        var = 4.0 * (n+i-1) / n
+        mean = np.zeros((n, n))
+        mean[:,0] = bias_mean
+        for k in xrange(1, n):
+            mean[k,1:k+1] = lateral_mean[k-1]
+
+        var = var_0 * (n+i-1) / n
         var[1:] += ((n-i[1:]+1) * (i[1:]-1) * lateral_mean / n**2)
 
-        print sigmoid(bias_mean)        
-        print sigmoid(np.insert(bias_mean[1:] + np.arange(1,n)*lateral_mean / n,
-                                0,
-                                bias_mean[0]))
-        print var
+        #print sigmoid(np.insert(bias_mean[1:] + np.arange(1,n)*lateral_mean / n,
+        #                        0, bias_mean[0]))
+        #print mean
+        #print var
         
-        return bias_mean, lateral_mean, var
+        return mean, var
 
     def _create_lateral_weights(self, topology, lateral_lens):
         """ Create a list of lateral connection weight matrices for the given
@@ -137,8 +142,8 @@ def _sample_laddered_layer(lateral, s):
     s[...,:] += lateral[:,0]
     s[...,0] = sample_indicator(sigmoid(s[...,0]))
     for i in range(1, s.shape[-1]):
-        j = min(i, lateral.shape[1])
-        s[...,i] += s[...,i-1:i-j:-1].dot(lateral[i,1:j])
+        j = min(i, lateral.shape[1]-1)
+        s[...,i] += s[...,i-j:i].dot(lateral[i,j:0:-1])
         s[...,i] = sample_indicator(sigmoid(s[...,i]))
     return s
 
@@ -153,8 +158,8 @@ def _sample_laddered_network(layers, laterals, s):
 def _probs_for_laddered_layer(lateral, s, p):
     p[...,:] += lateral[:,0]
     for i in range(1, s.shape[-1]):
-        j = min(i, lateral.shape[1])
-        p[...,i] += s[...,i-1:i-j:-1].dot(lateral[i,1:j])
+        j = min(i, lateral.shape[1]-1)
+        p[...,i] += s[...,i-j:i].dot(lateral[i,j:0:-1])
     return sigmoid(p, out=p)
 
 def _probs_for_laddered_network(layers, laterals, samples):
