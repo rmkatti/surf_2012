@@ -162,13 +162,14 @@ class HelmholtzMachine(object):
         samples.reverse()
         return samples
 
-    def _create_layer_weights(self, topology):
+    def _create_layer_weights(self, topology, biases=True):
         """ Create a list of inter-layer weight matrices for the given network
         topology.
         """
         weights = []
         for top, bottom in izip(topology, topology[1:]):
-            weights.append(np.zeros((top + 1, bottom)))
+            if biases: top += 1
+            weights.append(np.zeros((top, bottom)))
         return weights
 
     def _generative_probs_for_sample(self, samples):
