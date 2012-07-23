@@ -31,8 +31,10 @@ class Runner(HasTraits):
         """
         parser = traits_argparse.make_arg_parser(self)
         parser.parse_args(args)
-        self.start()
-        print self.output
+        try:
+            self.start()
+        finally:
+            print self.output
         if self.outfile:
             self.save()
 
