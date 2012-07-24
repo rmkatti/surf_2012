@@ -111,20 +111,19 @@ class LadderedHelmholtzMachine(HelmholtzMachine):
         probs = np.reciprocal(i[::-1])
         probs[-1] -= 1e-4
         bias_mean = logit(probs)
-        lateral_mean = -(bias_mean[1:] - bias_mean[0]) * n / (i[1:]-1)
+        
+        #lateral_mean = -(bias_mean[1:] - bias_mean[0]) * n / (i[1:]-1)
+        lateral_mean = np.repeat(logit(1e-4), n-1)
 
         mean = np.zeros((n, n))
         mean[:,0] = bias_mean
         for k in xrange(1, n):
             mean[k,1:k+1] = lateral_mean[k-1]
-
-        var = var_0 * (n+i-1) / n
-        var[1:] += ((n-i[1:]+1) * (i[1:]-1) * lateral_mean / n**2)
-
-        #print sigmoid(np.insert(bias_mean[1:] + np.arange(1,n)*lateral_mean / n,
-        #                        0, bias_mean[0]))
-        #print mean
-        #print var
+            
+        #u = np.insert(lateral_mean, 0, 0)
+        #var = (n/(n+i-1)) * (var_0 - (n-i+1)*(i-1) * u / n**2)
+        var = np.array([4.0] + [0.25] * (n-1)) * 12
+        var = var.reshape((n,1))
         
         return mean, var
 
