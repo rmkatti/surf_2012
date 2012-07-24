@@ -62,7 +62,7 @@ cdef _update_lateral_weights(np.ndarray[np.double_t, ndim=2] lateral,
             lateral[i,j] += step * (target[i] - probs[i]) * target[i-j]
     return
 
-def _wake(world, G, G_lateral, G_mean, G_var, R, R_lateral, epsilon):
+def _wake(world, G, G_lateral, R, R_lateral, epsilon):
     # Sample data from the world.
     s = np.array(world(), copy=0, dtype=np.double)
     samples = _sample_laddered_network_1d(R, R_lateral, s)
@@ -72,8 +72,6 @@ def _wake(world, G, G_lateral, G_mean, G_var, R, R_lateral, epsilon):
     s = samples[0]
     generated = np.zeros(s.size)
     _probs_for_laddered_layer_1d(G_lateral[0], s, generated)
-
-    #G_lateral[0] -= epsilon[0] * (G_lateral[0] - G_mean[0]) / G_var[0]
     _update_lateral_weights(G_lateral[0], s, generated, epsilon[0])
 
     G_probs = _probs_for_laddered_network_1d(G, G_lateral[1:], samples)
@@ -82,7 +80,7 @@ def _wake(world, G, G_lateral, G_mean, G_var, R, R_lateral, epsilon):
         tokyo.dger4(step, inputs, target - generated, layer)
         _update_lateral_weights(lateral, target, generated, step)
 
-def _sleep(G, G_lateral, G_mean, G_var, R, R_lateral, epsilon):
+def _sleep(G, G_lateral, R, R_lateral, epsilon):
     # Generate a dream.
     d = np.zeros(G_lateral[0].shape[0])
     _sample_laddered_layer_1d(G_lateral[0], d)

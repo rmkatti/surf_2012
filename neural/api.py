@@ -1,3 +1,4 @@
 from helmholtz import HelmholtzMachine
+from helmholtz_bayesian import BayesianHelmholtzMachine
 from helmholtz_laddered import LadderedHelmholtzMachine
 from prob import rv_bit_vector, kl_divergence

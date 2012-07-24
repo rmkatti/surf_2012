@@ -54,10 +54,6 @@ class LadderedHelmholtzMachine(HelmholtzMachine):
         self.R_lateral = self._create_lateral_weights(topology[-2::-1],
                                                       self.R_ladder_len)
 
-        var_0 = 4.0
-        top_mean, top_var = self._create_lateral_prior(topology[0], var_0)
-        self.G_mean, self.G_var = [ top_mean ], [ top_var ]
-
     def sample_generative_dist(self, size = None, 
                                all_layers = False, top_units = None):
         """ Sample the generative distribution.
@@ -93,39 +89,15 @@ class LadderedHelmholtzMachine(HelmholtzMachine):
     def _wake(self, world, epsilon):
         """ Run a wake cycle.
         """
-        return _wake(world, self.G, self.G_lateral, self.G_mean, self.G_var, 
-                     self.R, self.R_lateral, epsilon)
+        return _wake(world, self.G, self.G_lateral, self.R, self.R_lateral,
+                     epsilon)
 
     def _sleep(self, epsilon):
         """ Run a sleep cycle.
         """
-        return _sleep(self.G, self.G_lateral, self.G_mean, self.G_var,
-                      self.R, self.R_lateral, epsilon)
+        return _sleep(self.G, self.G_lateral, self.R, self.R_lateral, epsilon)
 
     # LadderedHelmholtzMachine interface
-
-    def _create_lateral_prior(self, n, var_0):
-        """
-        """
-        i = np.arange(1, n+1, dtype=float)
-        probs = np.reciprocal(i[::-1])
-        probs[-1] -= 1e-4
-        bias_mean = logit(probs)
-        
-        #lateral_mean = -(bias_mean[1:] - bias_mean[0]) * n / (i[1:]-1)
-        lateral_mean = np.repeat(logit(1e-4), n-1)
-
-        mean = np.zeros((n, n))
-        mean[:,0] = bias_mean
-        for k in xrange(1, n):
-            mean[k,1:k+1] = lateral_mean[k-1]
-            
-        #u = np.insert(lateral_mean, 0, 0)
-        #var = (n/(n+i-1)) * (var_0 - (n-i+1)*(i-1) * u / n**2)
-        var = np.array([4.0] + [0.25] * (n-1)) * 12
-        var = var.reshape((n,1))
-        
-        return mean, var
 
     def _create_lateral_weights(self, topology, lateral_lens):
         """ Create a list of lateral connection weight matrices for the given
