@@ -13,6 +13,8 @@ setup(
                   libraries = ['blas']),
         Extension('neural._helmholtz',
                   ['neural/_helmholtz.pyx']),
+        Extension('neural._helmholtz_bayesian',
+                  ['neural/_helmholtz_bayesian.pyx']),
         Extension('neural._helmholtz_laddered',
                   ['neural/_helmholtz_laddered.pyx']),
         Extension('neural.utils._math',

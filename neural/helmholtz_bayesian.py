@@ -1,3 +1,6 @@
+# System library imports.
+import numpy as np
+
 # Local imports.
 from helmholtz_laddered import LadderedHelmholtzMachine
 
@@ -10,51 +13,69 @@ class BayesianHelmholtzMachine(LadderedHelmholtzMachine):
     its parameters using a prior distribution over the parameter space. The
     techinique offers a principled approach for introducing regularization to
     the wake-sleep learning algorithm.
+
+    This class assumes that each parameter is independently normally distributed
+    under the prior.
     """
 
     # HelmholtzMachine interface
 
-    def __init__(self, topology, ladder_len=None):
+    def __init__(self, topology, ladder_len=None, **params):
         """ Create a Bayesian Helmholtz machine.
         """
         super(BayesianHelmholtzMachine, self).__init__(topology, ladder_len)
-        var_0 = 4.0
-        top_mean, top_var = self._create_lateral_prior(topology[0], var_0)
-        self.G_mean, self.G_var = [ top_mean ], [ top_var ]
+        self.G_param, self.G_lateral_param = self._create_priors(**params)
 
     def _wake(self, world, epsilon):
         """ Run a wake cycle.
         """
-        return _wake(world, self.G, self.G_lateral, self.G_mean, self.G_var, 
+        return _wake(world, self.G, self.G_param,
+                     self.G_lateral, self.G_lateral_param,
                      self.R, self.R_lateral, epsilon)
-
-    def _sleep(self, epsilon):
-        """ Run a sleep cycle.
-        """
-        return _sleep(self.G, self.G_lateral, self.G_mean, self.G_var,
-                      self.R, self.R_lateral, epsilon)
 
     # BayesianHelmholtzMachine interface
     
-    def _create_lateral_prior(self, n, var_0):
-        """
-        """
-        i = np.arange(1, n+1, dtype=float)
-        probs = np.reciprocal(i[::-1])
-        probs[-1] -= 1e-4
-        bias_mean = logit(probs)
-        
-        #lateral_mean = -(bias_mean[1:] - bias_mean[0]) * n / (i[1:]-1)
-        lateral_mean = np.repeat(logit(1e-4), n-1)
+    def _create_priors(self, base_variance = 4.0):
+        """ Create the layer and lateral weight prior hyperparameters.
 
-        mean = np.zeros((n, n))
-        mean[:,0] = bias_mean
-        for k in xrange(1, n):
-            mean[k,1:k+1] = lateral_mean[k-1]
-            
-        #u = np.insert(lateral_mean, 0, 0)
-        #var = (n/(n+i-1)) * (var_0 - (n-i+1)*(i-1) * u / n**2)
-        var = np.array([4.0] + [0.25] * (n-1)) * 12
-        var = var.reshape((n,1))
+        The default implementation establishes the unique prior satisfying:
+
+            1. Each unit is independent and equally likely to have each of the
+               values 0 and 1.
+            2. The mean of each paramater is 0.
+            3. All parameters for a particular unit have the same variance.
+            4. The variance of the input to each unit is constant under the
+               prior and equal to 'base_variance'.
+
+        See Pearl, "Graphical models for machine learning", Section 3.2.3.
+        """
+        self.base_variance = base_variance
+        layer_params, lateral_params = [], []
+
+        prev_layer_len = 0
+        for layer_len, ladder_len in zip(self.topology, self.G_ladder_len):
+            # Count the number of incoming connections to each unit.
+            count = np.minimum(ladder_len, np.arange(1, layer_len+1)) # lateral
+            count += prev_layer_len # inter-layer
+
+            # Compute the parameter variance for each unit.
+            var = (2.0 / (count + 1)) * base_variance
+
+            if prev_layer_len:
+                layer_param = np.zeros((2, prev_layer_len, layer_len))
+                layer_mean, layer_var = layer_param
+                layer_var[:,:] = var
+                layer_params.append(layer_param)
+
+            lateral_param = np.zeros((2, layer_len, ladder_len))
+            lateral_mean, lateral_var = lateral_param
+            for i in xrange(layer_len):
+                lateral_var[i,:min(i+1, ladder_len)] = var[i]
+            lateral_params.append(lateral_param)
+
+            prev_layer_len = layer_len
+
+        return layer_params, lateral_params
         
-        return mean, var
+
+from _helmholtz_bayesian import _wake

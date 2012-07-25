@@ -51,10 +51,10 @@ cdef _probs_for_laddered_network_1d(layers, laterals, samples):
     return probs
 
 
-cdef _update_lateral_weights(np.ndarray[np.double_t, ndim=2] lateral,
-                             np.ndarray[np.double_t, ndim=1] target,
-                             np.ndarray[np.double_t, ndim=1] probs,
-                             double step):
+cdef void _update_lateral(np.ndarray[np.double_t, ndim=2] lateral,
+                          np.ndarray[np.double_t, ndim=1] target,
+                          np.ndarray[np.double_t, ndim=1] probs,
+                          double step):
     cdef int i, j
     for i in range(lateral.shape[0]):
         lateral[i,0] += step * (target[i] - probs[i])
@@ -72,13 +72,13 @@ def _wake(world, G, G_lateral, R, R_lateral, epsilon):
     s = samples[0]
     generated = np.zeros(s.size)
     _probs_for_laddered_layer_1d(G_lateral[0], s, generated)
-    _update_lateral_weights(G_lateral[0], s, generated, epsilon[0])
+    _update_lateral(G_lateral[0], s, generated, epsilon[0])
 
     G_probs = _probs_for_laddered_network_1d(G, G_lateral[1:], samples)
     for layer, lateral, inputs, target, generated, step \
             in zip(G, G_lateral[1:], samples, samples[1:], G_probs, epsilon[1:]):
         tokyo.dger4(step, inputs, target - generated, layer)
-        _update_lateral_weights(lateral, target, generated, step)
+        _update_lateral(lateral, target, generated, step)
 
 def _sleep(G, G_lateral, R, R_lateral, epsilon):
     # Generate a dream.
@@ -92,4 +92,4 @@ def _sleep(G, G_lateral, R, R_lateral, epsilon):
     for layer, lateral, inputs, target, recognized, step \
             in zip(R, R_lateral, dreams, dreams[1:], R_probs, epsilon[::-1]):
         tokyo.dger4(step, inputs, target - recognized, layer)
-        _update_lateral_weights(lateral, target, recognized, step)
+        _update_lateral(lateral, target, recognized, step)
