@@ -1,6 +1,8 @@
 # Standard library imports.
 import argparse
+from collections import deque
 import re
+from StringIO import StringIO
 import sys
 
 # System library imports.
@@ -23,7 +25,8 @@ def make_arg_parser(config_obj, *args, **kwds):
         if parse is None:
             parse = parser_registry.lookup(trait)
        
-        action = parser.add_argument('--' + name, help=trait.desc,
+        arg_name = '--' + name.replace('_', '-')
+        action = parser.add_argument(arg_name, help=trait.desc, 
                                      action=TraitsConfigAction)
         action.parse, action.trait = parse, trait
 
@@ -35,7 +38,7 @@ class TraitsConfigAction(argparse.Action):
         try:
             value = self.parse(self.trait, value)
             setattr(parser.config_obj, self.dest, value)
-        except Exception, exc:
+        except Exception as exc:
             raise argparse.ArgumentError(self, str(exc))
 
 # Built-in string->value parsers.
@@ -94,7 +97,40 @@ def parse_list(trait, value):
     return [ parse_item(subtrait, item) for item in _parse_sequence(value) ]
 
 def _parse_sequence(value):
-    return [ item.strip() for item in value.strip('[](){}').split(',') ]
+    delimiters = {']':'[', ')':'(', '}':'{'}
+    current = StringIO()
+    items = []
+
+    def flush():
+        items.append(current.getvalue().strip())
+        current.truncate(0)
+
+    def error():
+        raise ValueError("Mismatched brackets in value %r" % value)
+
+    # Strip off enclosing brackets, if present.
+    value = value.strip()
+    start = delimiters.get(value[-1])
+    if start and value[0] == start:
+        value = value[1:-1]
+            
+    # Split on commas at zero bracket level.
+    stack = deque()
+    for c in value.strip():
+        if c in delimiters.iterkeys():
+            try:
+                assert stack.pop() == delimiters[c]
+            except (AssertionError, IndexError):
+                error()
+        elif c in delimiters.itervalues():
+            stack.append(c)
+        if c == ',' and len(stack) == 0:
+            flush()
+        else:
+            current.write(c)
+    flush() if len(stack) == 0 else error()
+
+    return items
 
 # The string->value parser registry.
 

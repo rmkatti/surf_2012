@@ -9,6 +9,15 @@ from neural.runner.traits_argparse import parse_array, parse_compound, \
     parse_dict, parse_import, parse_list
 
 
+def test_nested_sequence():
+    trait = List(List(Int))
+    assert_equal([[1, 2], [3, 4]],
+                 parse_list(trait, '[[1, 2], [3, 4]]'))
+
+    trait = Dict(Str, List(Int))
+    assert_equal(dict(foo=[1,2], bar=[3,4]),
+                 parse_dict(trait, 'foo: [1,2], bar: [3,4]'))
+
 def test_parse_array():
     trait = Array(dtype=int)
     x = np.arange(5)
