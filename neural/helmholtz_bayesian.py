@@ -14,12 +14,10 @@ class BayesianHelmholtzMachine(LadderedHelmholtzMachine):
 
     # HelmholtzMachine interface
 
-    def __init__(self, topology, ladder_len=None, **kwds):
+    def __init__(self, topology, ladder_len=None):
         """ Create a Bayesian Helmholtz machine.
         """
-        super(BayesianHelmholtzMachine, self).__init__(
-            topology, ladder_len, **kwds)
-
+        super(BayesianHelmholtzMachine, self).__init__(topology, ladder_len)
         var_0 = 4.0
         top_mean, top_var = self._create_lateral_prior(topology[0], var_0)
         self.G_mean, self.G_var = [ top_mean ], [ top_var ]

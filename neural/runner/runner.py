@@ -2,8 +2,8 @@
 import datetime
 
 # System library imports.
-from traits.api import HasTraits, BaseInstance, Either, File, Float, Int, \
-    List, Str, Type
+from traits.api import HasTraits, Any, BaseInstance, Dict, Either, File, \
+    Float, Int, List, Str, Type
 
 # Local imports.
 from neural.utils.io import redirect_output
@@ -75,9 +75,9 @@ class NeuralRunner(Runner):
     cls = Type(config=True, config_default_module='neural.api',
                desc="class of the machine, e.g. 'LadderedHelmholtzMachine' " \
                    "or 'my_package.custom_machine.CustomMachine'")
+    cls_args = Dict(Str, Any, config=True,
+                    desc="optional keyword arguments for the class constructor")
     topology = List(Int, config=True, desc='layer topology of network')
-    ladder_len = Either(Int, List(Int), config=True, default=[],
-                        desc='lateral topology of network')
 
     epsilon = Either(Float, List(Float), config=True, default=0.01,
                      desc="learning rate")
@@ -88,5 +88,4 @@ class NeuralRunner(Runner):
     maxiter = Int(config=True, desc='number of iterations during learning')
 
     def create_machine(self):
-        return self.cls(topology = self.topology,
-                        ladder_len = self.ladder_len)
+        return self.cls(topology = self.topology, **self.cls_args)

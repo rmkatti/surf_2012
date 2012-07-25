@@ -16,7 +16,7 @@ class LadderedHelmholtzMachine(HelmholtzMachine):
 
     # HelmholtzMachine interface
     
-    def __init__(self, topology, ladder_len=None, **kwds):
+    def __init__(self, topology, ladder_len=None):
         """ Create a laddered Helmholtz machine.
 
         Parameters:
@@ -37,7 +37,7 @@ class LadderedHelmholtzMachine(HelmholtzMachine):
         self.G = self._create_layer_weights(topology, biases=False)
         self.R = self._create_layer_weights(topology[::-1], biases=False)
 
-        if ladder_len is None or ladder_len == []:
+        if ladder_len is None:
             self.G_ladder_len = np.array(list(topology[:-1]) + [1])
         elif np.isscalar(ladder_len):
             self.G_ladder_len = np.repeat(ladder_len, len(topology))
@@ -46,7 +46,7 @@ class LadderedHelmholtzMachine(HelmholtzMachine):
         else:
             raise ValueError("'topology' and 'ladder_len' have unequal length")
         if not np.all(self.G_ladder_len >= 1):
-            raise ValueError("'laddern_len' must be at least 1")
+            raise ValueError("'ladder_len' must be at least 1")
         self.R_ladder_len = self.G_ladder_len[-2::-1]
 
         self.G_lateral = self._create_lateral_weights(topology,
