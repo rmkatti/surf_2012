@@ -1,11 +1,12 @@
 # System library imports.
 import numpy as np
 from numpy.testing import assert_equal
-from traits.api import HasTraits, Array, Either, Float, Int, List, Str, Type
+from traits.api import HasTraits, Array, Dict, Either, Float, Int, List, Str, \
+    Type
 
 # Local imports.
 from neural.runner.traits_argparse import parse_array, parse_compound, \
-    parse_list, parse_type
+    parse_dict, parse_import, parse_list
 
 
 def test_parse_array():
@@ -27,6 +28,20 @@ def test_parse_compound():
     assert_equal(10, parse_compound(trait, '10'))
     assert_equal('foo', parse_compound(trait, 'foo'))
 
+def test_parse_dict():
+    trait = Dict(Str, Int)
+    x = dict(foo=1, bar=2)
+    for y in [ parse_dict(trait, '{foo: 1, bar: 2}'),
+               parse_dict(trait, '{foo=1, bar=2}'),
+               parse_dict(trait, 'foo:1,bar:2') ]:
+        assert_equal(x, y)
+
+def test_parse_import():
+    import datetime
+    trait = Type()
+    assert_equal(datetime.datetime,
+                 parse_import(trait, 'datetime.datetime'))
+
 def test_parse_list():
     trait = List(Float)
     x = [1.0, 1.5, 2.0]
@@ -34,9 +49,3 @@ def test_parse_list():
                parse_list(trait, '(1.0, 1.5, 2.0)'),
                parse_list(trait, '1.0,1.5,2.0') ]:
         assert_equal(x, y)
-
-def test_parse_type():
-    import datetime
-    trait = Type()
-    assert_equal(datetime.datetime,
-                 parse_type(trait, 'datetime.datetime'))

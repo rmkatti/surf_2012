@@ -1,5 +1,6 @@
 # Standard library imports.
 import argparse
+import re
 import sys
 
 # System library imports.
@@ -61,6 +62,21 @@ def parse_compound(trait, value):
     # FIXME: better error reporting here.
     raise ValueError('Cannot parse string %r for compound trait.' % value)
 
+def parse_dict(trait, value):
+    typ = get_trait_type(trait)
+    key_trait, val_trait = typ.key_trait, typ.value_trait
+    parse_key = parser_registry.lookup(key_trait)
+    parse_val = parser_registry.lookup(val_trait)
+
+    items = {}
+    for pair in _parse_sequence(value):
+        pair_split = re.split('[:=]', pair)
+        if len(pair_split) != 2:
+            raise ValueError('Cannot parse dict pair %r.' % pair)
+        key, val = pair_split
+        items[parse_key(key_trait, key)] = parse_val(val_trait, val)
+    return items
+
 def parse_import(trait, value):
     split = value.rsplit('.', 1)
     if len(split) == 2:
@@ -78,7 +94,7 @@ def parse_list(trait, value):
     return [ parse_item(subtrait, item) for item in _parse_sequence(value) ]
 
 def _parse_sequence(value):
-    return [ item.strip() for item in value.strip('[]()').split(',') ]
+    return [ item.strip() for item in value.strip('[](){}').split(',') ]
 
 # The string->value parser registry.
 
@@ -105,10 +121,11 @@ class ParserRegistry(HasTraits):
         if cls in self._map:
             del self._map[cls]
 
-from traits.api import Array, BaseBool, BaseFile, BaseFloat, BaseInt, \
-    BaseLong, BaseStr, BaseUnicode, List, TraitCompound, Type
+from traits.api import Any, Array, BaseBool, BaseFile, BaseFloat, BaseInt, \
+    BaseLong, BaseStr, BaseUnicode, Dict, List, TraitCompound, Type
 
 parser_registry = ParserRegistry()
+parser_registry.add(Any, make_parse(eval))
 parser_registry.add(Array, parse_array)
 parser_registry.add(BaseBool, make_parse(bool))
 parser_registry.add(BaseFile, null_parse)
@@ -117,6 +134,7 @@ parser_registry.add(BaseInt, make_parse(int))
 parser_registry.add(BaseLong, make_parse(long))
 parser_registry.add(BaseStr, null_parse)
 parser_registry.add(BaseUnicode, null_parse)
+parser_registry.add(Dict, parse_dict)
 parser_registry.add(List, parse_list)
 parser_registry.add(TraitCompound, parse_compound)
 parser_registry.add(Type, parse_import)
