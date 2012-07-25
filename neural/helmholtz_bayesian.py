@@ -15,7 +15,8 @@ class BayesianHelmholtzMachine(LadderedHelmholtzMachine):
     the wake-sleep learning algorithm.
 
     This class assumes that each parameter is independently normally distributed
-    under the prior.
+    under the prior. In the limit of the variances approaching infinity, the
+    algorithm reduces to ML learning.
     """
 
     # HelmholtzMachine interface
@@ -26,12 +27,12 @@ class BayesianHelmholtzMachine(LadderedHelmholtzMachine):
         super(BayesianHelmholtzMachine, self).__init__(topology, ladder_len)
         self.G_param, self.G_lateral_param = self._create_priors(**params)
 
-    def _wake(self, world, epsilon):
+    def _wake(self, world, iter, maxiter, epsilon):
         """ Run a wake cycle.
         """
         return _wake(world, self.G, self.G_param,
                      self.G_lateral, self.G_lateral_param,
-                     self.R, self.R_lateral, epsilon)
+                     self.R, self.R_lateral, maxiter, epsilon)
 
     # BayesianHelmholtzMachine interface
     

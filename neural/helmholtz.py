@@ -81,8 +81,8 @@ class HelmholtzMachine(object):
 
         maxiter = maxiter or 50000
         for i in xrange(1, maxiter+1):
-            self._wake(world, epsilon)
-            self._sleep(epsilon)
+            self._wake(world, i, maxiter, epsilon)
+            self._sleep(i, maxiter, epsilon)
             if anneal:
                 epsilon = epsilon_0 / (1 + anneal * i)
             if yield_call and next_yield == i:
@@ -180,12 +180,12 @@ class HelmholtzMachine(object):
         probs.insert(0, sigmoid(self.G_bias))
         return probs
 
-    def _wake(self, world, epsilon):
+    def _wake(self, world, iter, maxiter, epsilon):
         """ Run a wake cycle.
         """
         return _wake(world, self.G, self.G_bias, self.R, epsilon)
 
-    def _sleep(self, epsilon):
+    def _sleep(self, iter, maxiter, epsilon):
         """ Run a sleep cycle.
         """
         return _sleep(self.G, self.G_bias, self.R, epsilon)
