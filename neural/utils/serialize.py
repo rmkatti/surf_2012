@@ -11,9 +11,19 @@ import numpy as np
 from decorators import memoize
 from io import open_filename
 
-# Exported functions.
-encode = jsonpickle.encode
-decode = jsonpickle.decode
+# Public serialization API.
+
+def encode(value, unpicklable=True):
+    """ Return a JSON formatted representation of value, a Python object.
+    """
+    j = Pickler(unpicklable=unpicklable)
+    return jsonpickle.json.encode(j.flatten(value))
+
+def decode(string):
+    """ Convert a JSON string into a Python object.
+    """
+    j = Unpickler()
+    return j.restore(jsonpickle.json.decode(string))
 
 def load(filename):
     """ Load a JSON-pickled object.
@@ -26,6 +36,17 @@ def save(filename, obj):
     """
     with open_filename(filename, 'w') as fh:
         return fh.write(encode(obj))
+
+class Pickler(jsonpickle.Pickler):
+    """ A Pickler that properly supports TraitsDict.
+    """
+    def flatten(self, obj):
+        if jsonpickle.util.is_dictionary(obj):
+            self._push()
+            return self._pop(self._flatten_dict_obj(obj, dict()))
+        return super(Pickler, self).flatten(obj)
+
+Unpickler = jsonpickle.Unpickler
 
 # Monkey-patch jsonpickle. The existing implementations of these methods check
 # whether the obj is strictly of the specified type, e.g. whether ``type(obj) is
