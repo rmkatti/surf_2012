@@ -23,7 +23,7 @@ class SparseHelmholtzMachine(BayesianHelmholtzMachine):
         for layer_len, ladder_len in zip(self.topology, self.G_ladder_len)[1:]:
             layer_param = np.zeros((2, prev_layer_len, layer_len))
             layer_mean, layer_var = layer_param
-            layer_var[:,:] = 5.0
+            layer_var[:,:] = np.inf # 4.0
             layer_params.append(layer_param)
             
             lateral_param = self._create_lateral_prior(layer_len, ladder_len)
@@ -57,10 +57,10 @@ class SparseHelmholtzMachine(BayesianHelmholtzMachine):
         param = np.zeros((2, ladder_len, ladder_len))
         mean, var = param
         lateral_mean = logit(1e-4)
-        var[:,0] = 1.0
+        var[:,0] = 1e-3
         for i in xrange(1, ladder_len):
             mean[i,1:i+1] = lateral_mean
-            var[i,1:i+1] = 1e-4
+            var[i,1:i+1] = 1e-3
         return param
 
     def _create_top_prior(self, layer_len, ladder_len):
@@ -76,10 +76,9 @@ class SparseHelmholtzMachine(BayesianHelmholtzMachine):
         # Make mutual exclusivity high probable but individual probabilities
         # fairly variable.
         mean[:,0] = bias_mean
-        var[:-1,0] = 1.0
-        var[-1,0] = 1e-4 #4.0 / 80000 #1.0
+        var[:,0] = 1e-3
         for i in xrange(1, layer_len):
             mean[i,1:i+1] = lateral_mean
-            var[i,1:i+1] = 1e-4 #0.25 * 12 / 80000 #1e-4
+            var[i,1:i+1] = 1e-3
 
         return param
