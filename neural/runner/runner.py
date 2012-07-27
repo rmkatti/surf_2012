@@ -71,7 +71,7 @@ class Runner(HasTraits):
 class NeuralRunner(Runner):
     """ The base runner class for a neural network simulation.
     """
-    # Configuration.
+    # Configuration: machine.
     cls = Type(config=True, config_default_module='neural.api',
                desc="class of the machine, e.g. 'LadderedHelmholtzMachine' " \
                    "or 'my_package.custom_machine.CustomMachine'")
@@ -79,13 +79,19 @@ class NeuralRunner(Runner):
                     desc="optional keyword arguments for the class constructor")
     topology = List(Int, config=True, desc='layer topology of network')
 
-    epsilon = Either(Float, List(Float), config=True, default=0.01,
-                     desc="learning rate")
+    # Configuration: training.
+    rate = Either(Float, List(Float), config=True, default=0.01,
+                  desc="learning rate")
     anneal = Either(Float, List(Float), config=True, default=0,
                     desc="parameter for anealing schedule '" \
-                        "epsilon = epsilon_0 / (1 + aneal * t)', " \
-                        "where t is the current iteration")
-    maxiter = Int(config=True, desc='number of iterations during learning')
+                        "rate = rate_0 / (1 + aneal * e)', " \
+                        "where e is the current epoch")
+    epochs = Int(config=True, default=100,
+                 desc='number of epochs (full passes through data set)')
 
     def create_machine(self):
         return self.cls(topology = self.topology, **self.cls_args)
+
+    def train(self, machine, data, **kwds):
+        return machine.train(data, rate = self.rate, anneal = self.anneal,
+                             epochs = self.epochs, **kwds)

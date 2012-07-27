@@ -31,12 +31,12 @@ class BayesianHelmholtzMachine(LadderedHelmholtzMachine):
         for lateral, (mean, _) in zip(self.G_lateral, self.G_lateral_param):
             lateral[:,:] = mean
 
-    def _wake(self, world, iter, maxiter, epsilon):
+    def _wake(self, sample, data_size, epochs, rate):
         """ Run a wake cycle.
         """
-        return _wake(world, self.G, self.G_param,
+        return _wake(sample, self.G, self.G_param,
                      self.G_lateral, self.G_lateral_param,
-                     self.R, self.R_lateral, maxiter, epsilon)
+                     self.R, self.R_lateral, data_size, rate)
 
     # BayesianHelmholtzMachine interface
     

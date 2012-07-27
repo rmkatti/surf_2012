@@ -18,11 +18,12 @@ class ShifterRunner(NeuralRunner):
 
     # NeuralRunner configuration.
     cls = HelmholtzMachine
-    epsilon = (0.01, 0.01, 0.15)
-    maxiter = 60000
+    rate = (0.01, 0.01, 0.15)
+    epochs = 10
 
     # ShifterRunner configuration.
     bits = Int(8, config=True)
+    data_size = Int(10000, config=True)
 
     # Results.
     machine = Any
@@ -32,10 +33,15 @@ class ShifterRunner(NeuralRunner):
 
     def run(self):
         self.machine = machine = self.create_machine()
-        machine.train(self.sample_world, epsilon=self.epsilon, 
-                      anneal=self.anneal, maxiter=self.maxiter)
+        data = self.sample(size = self.data_size)
+        self.train(machine, data)
 
-    def sample_world(self):
+    def sample(self, size=None):
+        if size is None:
+            return self.single_sample()
+        return [ self.single_sample() for i in xrange(size) ]
+
+    def single_sample(self):
         shift = 1 if np.random.sample() < 0.5 else -1
         bottom = np.array(np.random.sample(self.bits) < 0.2, dtype=int)
         top = np.roll(bottom, shift)

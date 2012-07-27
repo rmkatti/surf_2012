@@ -35,7 +35,6 @@ def read_mnist_images(path):
         shape = (num_imgs, num_cols, num_rows)
         return np.fromfile(file=f, dtype=np.uint8).reshape(shape)
 
-
 def read_mnist_labels(path):
     """ Load an MNIST labels file.
     """
@@ -43,3 +42,11 @@ def read_mnist_labels(path):
         magic, num_imgs = struct.unpack('>ii', f.read(8))
         assert magic == 2049, 'MNIST checksum failed'
         return np.fromfile(file=f, dtype=np.uint8)
+
+
+def binarize_mnist_images(imgs):
+    """ Binarize and flatten MNIST images.
+    """
+    imgs = imgs.reshape((imgs.shape[0], 28*28)).astype(float)
+    imgs /= 255.0
+    return np.round(imgs, out=imgs)

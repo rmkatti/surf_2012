@@ -14,8 +14,8 @@ class BenchmarkRunner(NeuralRunner):
     """
 
     # Configuration.
-    samples = Int(10000, config=True)
-    yield_at = Int(500, config=True)
+    benchmark_interval = Int(500, config=True)
+    data_size = Int(10000, config=True)
 
     # Results.
     machine = Any
@@ -26,19 +26,17 @@ class BenchmarkRunner(NeuralRunner):
     
     def run(self):
         self.machine = machine = self.create_machine()
+        dist = self.create_dist()
 
         iters, kl = [], []
         def update_kl(i):
-            gen_dist = machine.estimate_generative_dist(self.samples)
+            gen_dist = machine.estimate_generative_dist(self.data_size)
             iters.append(i)
             kl.append(kl_divergence(dist, gen_dist))
 
-        dist = self.create_dist()
-        world = dist.rvs_iter(size = self.maxiter)
-        machine.train(world.next, epsilon=self.epsilon, anneal=self.anneal,
-                      maxiter=self.maxiter, 
-                      yield_at=self.yield_at, yield_call=update_kl)
-
+        data = dist.rvs(size = self.data_size)
+        self.train(machine, data,
+                   yield_at = self.benchmark_interval, yield_call = update_kl)
         self.iters, self.kl = iters, kl
 
     # BenchmarkRunner interface.

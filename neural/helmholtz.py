@@ -29,19 +29,17 @@ class HelmholtzMachine(object):
         self.G_bias = np.zeros(topology[0])
         self.R = self._create_layer_weights(topology[::-1])
 
-    def train(self, world, epsilon=None, anneal=None, maxiter=None,
+    def train(self, data, rate=None, anneal=None, epochs=None,
               yield_at=None, yield_call=None):
-        """ Train the Helmholtz machine.
+        """ Train the Helmholtz machine using the wake-sleep algorihtm.
 
         Parameters:
         -----------
-        world : callable() -> bit vector
-            A function that samples data from the "world".
+        data : sequence of bit vector
+            The training data. Note that the number of input nodes in the
+            network topology must equal the size of the data vectors.
 
-            Note: the number of input nodes in the network topology must equal
-            the size of the bit vectors produced by the 'world' function.
-
-        epsilon : float or sequence of floats, optional [default 0.01]
+        rate : float or sequence of floats, optional [default 0.01]
             The learning rate, i.e. the step size for the weight updates. If a
             different learning rate is required at each layer, a sequence may be
             given, which must be of the same length as 'topology'.
@@ -50,44 +48,52 @@ class HelmholtzMachine(object):
             By default, the learning rate is constant. If 'anneal' is specified,
             the learning rate is decreased according to the schedule
 
-                epsilon = epsilon_0 / (1 + aneal * t),
+                rate = rate_0 / (1 + aneal * e),
                 
-            where t is the current iteration.
+            where e is the current epoch.
 
-        maxiter : int, optional [default 50000]
-            The number the wake-sleep cycles to run.
+        epochs : int, optional [default 100]
+            The number the epochs (full pases through the data set).
 
-        yield_at: int, optional [default 1000]
+        yield_at: int, optional [default one epoch]
         yield_call : callable(iter), optional
             If provided, the given function will be called periodically with the
-            current iteration number.
+            current iteration number (cumulative count of wake-sleep cycles).
         """
-        if epsilon is None:
-            epsilon = 0.01
-        if np.isscalar(epsilon):
-            epsilon = np.repeat(epsilon, len(self.topology))
+        data_size = len(data)
+
+        if rate is None:
+            rate = 0.01
+        if np.isscalar(rate):
+            rate = np.repeat(rate, len(self.topology))
         else:
-            epsilon = np.array(epsilon, copy=0)
+            rate = np.array(rate, copy=0)
 
         if anneal:
-            epsilon_0 = epsilon.copy()
+            rate_0 = rate.copy()
             if not np.isscalar(anneal):
                 anneal = np.array(anneal, copy=0)
-
-        yield_at = yield_at or 1000
+        
         if yield_call:
+            yield_at = yield_at or data_size
             next_yield = yield_at
             yield_call(0)
 
-        maxiter = maxiter or 50000
-        for i in xrange(1, maxiter+1):
-            self._wake(world, i, maxiter, epsilon)
-            self._sleep(i, maxiter, epsilon)
+        iteration = 1
+        for epoch in xrange(1, epochs+1):
+            indices = np.random.permutation(data_size)
+            for index in indices:
+                sample = data[index]
+                self._wake(sample, data_size, epochs, rate)
+                self._sleep(data_size, epochs, rate)
+
+                if yield_call and next_yield == iteration:
+                    next_yield += yield_at
+                    yield_call(iteration)
+
+                iteration += 1
             if anneal:
-                epsilon = epsilon_0 / (1 + anneal * i)
-            if yield_call and next_yield == i:
-                next_yield += yield_at
-                yield_call(i)
+                rate = rate_0 / (1.0 + anneal * epoch)
 
     def estimate_coding_cost(self, d, n = 10):
         """ Estimate the expected coding cost of the data d by sampling the
@@ -180,15 +186,15 @@ class HelmholtzMachine(object):
         probs.insert(0, sigmoid(self.G_bias))
         return probs
 
-    def _wake(self, world, iter, maxiter, epsilon):
+    def _wake(self, sample, data_size, epochs, rate):
         """ Run a wake cycle.
         """
-        return _wake(world, self.G, self.G_bias, self.R, epsilon)
+        return _wake(sample, self.G, self.G_bias, self.R, rate)
 
-    def _sleep(self, iter, maxiter, epsilon):
+    def _sleep(self, data_size, epochs, rate):
         """ Run a sleep cycle.
         """
-        return _sleep(self.G, self.G_bias, self.R, epsilon)
+        return _sleep(self.G, self.G_bias, self.R, rate)
 
 # Helmholtz machine internals
 
@@ -204,22 +210,21 @@ def _probs_for_factorial_network(layers, samples):
              for L, s in izip(layers, samples) ]
         
 # Reference/fallback implementation
-def _wake(world, G, G_bias, R, epsilon):
-    # Sample data from the world.
-    s = world()
-    samples = _sample_factorial_network(R, s)
+def _wake(sample, G, G_bias, R, rate):
+    # Sample data from the recognition network.
+    samples = _sample_factorial_network(R, sample)
     samples.reverse()
         
     # Pass back down through the generation network and adjust weights.
-    G_bias += epsilon[0] * (samples[0] - sigmoid(G_bias))
+    G_bias += rate[0] * (samples[0] - sigmoid(G_bias))
     G_probs = _probs_for_factorial_network(G, samples)
     for G_weights, inputs, target, generated, step \
-            in izip(G, samples, samples[1:], G_probs, epsilon[1:]):
+            in izip(G, samples, samples[1:], G_probs, rate[1:]):
         G_weights[:-1] += step * np.outer(inputs, target - generated)
         G_weights[-1] += step * (target - generated)
 
 # Reference/fallback implementation
-def _sleep(G, G_bias, R, epsilon):
+def _sleep(G, G_bias, R, rate):
     # Generate a dream.
     d = sample_indicator(sigmoid(G_bias))
     dreams = _sample_factorial_network(G, d)
@@ -228,7 +233,7 @@ def _sleep(G, G_bias, R, epsilon):
     # Pass back up through the recognition network and adjust weights.
     R_probs = _probs_for_factorial_network(R, dreams)
     for R_weights, inputs, target, recognized, step \
-            in izip(R, dreams, dreams[1:], R_probs, epsilon[::-1]):
+            in izip(R, dreams, dreams[1:], R_probs, rate[::-1]):
         R_weights[:-1] += step * np.outer(inputs, target - recognized)
         R_weights[-1] += step * (target - recognized)
 

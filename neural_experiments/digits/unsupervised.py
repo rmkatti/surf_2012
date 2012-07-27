@@ -5,8 +5,7 @@ from traits.api import Any, File, Int, List
 # Local imports.
 from neural.api import HelmholtzMachine
 from neural.runner.api import NeuralRunner
-from mnist import read_mnist
-from util import prepare_mnist_images, shuffled_iter
+from mnist import binarize_mnist_images, read_mnist
 
 
 class UnsupervisedDigitsRunner(NeuralRunner):
@@ -14,8 +13,8 @@ class UnsupervisedDigitsRunner(NeuralRunner):
     # NeuralRunner configuration.
     cls = HelmholtzMachine
     topology = [16, 128, 128, 28*28]
-    epsilon = 0.01
-    maxiter = 100000
+    rate = 0.01
+    epochs = 10
 
     # UnsupervisedDigitsRunner configuration.
     digits = List(Int, range(10), config=True)
@@ -27,14 +26,11 @@ class UnsupervisedDigitsRunner(NeuralRunner):
     def run(self):
         imgs, labels = read_mnist(path=self.data_path, training=True)
         idx = np.in1d(labels, self.digits)
-        imgs = prepare_mnist_images(imgs[idx])
+        imgs = binarize_mnist_images(imgs[idx])
         labels = labels[idx]
 
-        world = shuffled_iter(imgs, copy=False)
-        self.machine = self.create_machine()
-        self.machine.train(world.next, 
-                           epsilon = self.epsilon, anneal = self.anneal,
-                           maxiter = self.maxiter)
+        self.machine = machine = self.create_machine()
+        self.train(machine, imgs)
 
 
 def main(args = None):

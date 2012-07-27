@@ -15,10 +15,11 @@ class Bars3x3Runner(BenchmarkRunner):
     # BenchmarkRunner configuration.
     cls = HelmholtzMachine
     topology = [1, 6, 9]
-    epsilon = 0.1
-    anneal = 2.5e-5
-    maxiter = 80000
-    yield_at = 500
+    rate = 0.1
+    anneal = 1.0
+    epochs = 10
+    data_size = 10000
+    benchmark_interval = 500
 
     def create_dist(self):
         # Construct the bars distribution.

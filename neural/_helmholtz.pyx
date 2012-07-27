@@ -6,24 +6,24 @@ from neural.external cimport tokyo
 from neural.utils.math import sample_indicator, sigmoid
 
 
-def _wake(world, G, G_bias, R, epsilon):
-    # Sample data from the world.
-    s = world()
+def _wake(sample, G, G_bias, R, rate):
+    # Sample data from the recognition network.
+    s = sample
     samples = [ s ]
     for R_weights in R:
         s = sample_indicator(sigmoid(s.dot(R_weights[:-1]) + R_weights[-1]))
         samples.insert(0, s)
 
     # Pass back down through the generation network, adjusting weights as we go.
-    G_bias += epsilon[0] * (samples[0] - sigmoid(G_bias))
+    G_bias += rate[0] * (samples[0] - sigmoid(G_bias))
     for G_weights, inputs, target, step \
-            in zip(G, samples, samples[1:], epsilon[1:]):
+            in zip(G, samples, samples[1:], rate[1:]):
         generated = sigmoid(inputs.dot(G_weights[:-1]) + G_weights[-1])
         tokyo.dger4(step, inputs, target - generated, G_weights[:-1])
         G_weights[-1] += step * (target - generated)
 
 
-def _sleep(G, G_bias, R, epsilon):
+def _sleep(G, G_bias, R, rate):
     # Generate a dream.
     d = sample_indicator(sigmoid(G_bias))
     dreams = [ d ]
@@ -33,7 +33,7 @@ def _sleep(G, G_bias, R, epsilon):
 
     # Pass back up through the recognition network, adjusting weights as we go.
     for R_weights, inputs, target, step \
-            in zip(R, dreams, dreams[1:], epsilon[::-1]):
+            in zip(R, dreams, dreams[1:], rate[::-1]):
         recognized = sigmoid(inputs.dot(R_weights[:-1]) + R_weights[-1])
         tokyo.dger4(step, inputs, target - recognized, R_weights[:-1])
         R_weights[-1] += step * (target - recognized)
