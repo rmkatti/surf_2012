@@ -6,7 +6,7 @@ import numpy as np
 
 # Local imports.
 from helmholtz import HelmholtzMachine
-from utils.math import logit, sample_indicator, sigmoid
+from utils.math import sample_indicator, sigmoid
 
 # Laddered Helmholtz machine public API
 

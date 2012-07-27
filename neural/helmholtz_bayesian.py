@@ -26,6 +26,10 @@ class BayesianHelmholtzMachine(LadderedHelmholtzMachine):
         """
         super(BayesianHelmholtzMachine, self).__init__(topology, ladder_len)
         self.G_param, self.G_lateral_param = self._create_priors(**params)
+        for layer, (mean, _) in zip(self.G, self.G_param):
+            layer[:,:] = mean
+        for lateral, (mean, _) in zip(self.G_lateral, self.G_lateral_param):
+            lateral[:,:] = mean
 
     def _wake(self, world, iter, maxiter, epsilon):
         """ Run a wake cycle.

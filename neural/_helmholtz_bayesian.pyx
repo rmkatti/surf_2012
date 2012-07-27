@@ -20,11 +20,11 @@ cdef void _update_lateral(np.ndarray[np.double_t, ndim=2] lateral,
                           int maxiter, double step):
     cdef int i, j
     for i in range(lateral.shape[0]):
-        lateral[i,0] += (step * (lateral[i,0] - param[0,i,0]) / 
+        lateral[i,0] -= (step * (lateral[i,0] - param[0,i,0]) / 
                          (maxiter * param[1,i,0]))
         lateral[i,0] += step * (target[i] - probs[i])
         for j in range(1, min(i+1, lateral.shape[1])):
-            lateral[i,j] += (step * (lateral[i,j] - param[0,i,j]) / 
+            lateral[i,j] -= (step * (lateral[i,j] - param[0,i,j]) / 
                              (maxiter * param[1,i,j]))
             lateral[i,j] += step * (target[i] - probs[i]) * target[i-j]
     return
@@ -49,7 +49,7 @@ def _wake(world, G, G_param, G_lateral, G_lateral_param, R, R_lateral,
          inputs, target, generated, step) \
     in zip(G, G_param, G_lateral[1:], G_lateral_param[1:],
            samples, samples[1:], G_probs, epsilon[1:]):
-        layer += step * (layer - layer_param[0]) / (maxiter * layer_param[1])
+        layer -= step * (layer - layer_param[0]) / (maxiter * layer_param[1])
         tokyo.dger4(step, inputs, target - generated, layer)
         _update_lateral(lateral, lateral_param, target, generated,
                         maxiter, step)
