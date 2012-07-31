@@ -11,10 +11,9 @@ from traits.api import CTrait, HasTraits, Callable, Dict, Type
 
 # Dynamic ArgumentParser construction.
 
-def make_arg_parser(config_obj, *args, **kwds):
+def add_config_arguments(parser, config_obj):
     """ Dynamically construct an ArgumentParser for a HasTraits object.
     """
-    parser = argparse.ArgumentParser(*args, **kwds)
     parser.config_obj = config_obj
 
     traits = config_obj.traits(config=True)

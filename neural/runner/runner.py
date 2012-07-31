@@ -1,8 +1,9 @@
 # Standard library imports.
+import argparse
 import datetime
 
 # System library imports.
-from traits.api import HasTraits, BaseInstance, File, Float, Str
+from traits.api import HasTraits, BaseInstance, File, Float, Int, Str
 
 # Local imports.
 from neural.utils.io import redirect_output
@@ -18,6 +19,7 @@ class Runner(HasTraits):
     """
     # Configuration.
     outfile = File(config=True, transient=True, desc='filename for run output')
+    verbose = Int(transient=True, desc='verbosity level')
 
     # Information.
     start_time = Datetime
@@ -28,8 +30,16 @@ class Runner(HasTraits):
     def main(self, args = None):
         """ Convenience 'main' method to execute the runner.
         """
-        parser = traits_argparse.make_arg_parser(self)
-        parser.parse_args(args)
+        # Parse commandline arguments. Special case verbosity flag to permit
+        # counting.
+        parser = argparse.ArgumentParser()
+        parser.add_argument('-v', '--verbose', action='count', default=0,
+                            help='verbosity level')
+        traits_argparse.add_config_arguments(parser, self)
+        namespace = parser.parse_args(args)
+        self.verbose = namespace.verbose
+
+        # Execute the runner, saving output if necessary.
         try:
             self.start()
         finally:
