@@ -4,7 +4,7 @@ from traits.api import Any, Array, Int
 
 # Local imports.
 from neural.prob import kl_divergence
-from runner import NeuralRunner
+from neural_runner import NeuralRunner
 
 
 class BenchmarkRunner(NeuralRunner):
