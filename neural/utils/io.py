@@ -1,5 +1,8 @@
+from __future__ import absolute_import
+
 # Standard library imports.
 from cStringIO import StringIO
+from io import IOBase
 import os.path
 import sys
 
@@ -27,9 +30,10 @@ class open_filename(object):
 class redirect_output(object):
     """ A context manager for redirecting stdout/stderr.
     """
-    def __init__(self, stdout=True, stderr=True):
+    def __init__(self, stdout=True, stderr=True, echo=False):
         self.stdout = stdout
         self.stderr = stderr
+        self.echo = echo
     
     def __enter__(self):
         self.sys_stdout = sys.stdout
@@ -37,11 +41,22 @@ class redirect_output(object):
         
         io = StringIO()
         if self.stdout:
-            sys.stdout = io
+            sys.stdout = MultiplexedIO(sys.stdout, io) if self.echo else io
         if self.stderr:
-            sys.stderr = io
+            sys.stderr = MultiplexedIO(sys.stderr, io) if self.echo else io
         return io
     
     def __exit__(self, exc_type, exc_value, traceback):
         sys.stdout = self.sys_stdout
         sys.stderr = self.sys_stderr
+
+
+class MultiplexedIO(IOBase):
+
+    def __init__(self, *writers):
+        super(MultiplexedIO, self).__init__()
+        self.writers = writers
+
+    def write(self, s):
+        for writer in self.writers:
+            writer.write(s)

@@ -43,7 +43,18 @@ class SupervisedNeuralRunner(NeuralRunner):
     sklearn.grid_search.
     """
 
-    # 'Estimator' interface
+    # sklearn 'estimator' interface
+    
+    def get_params(self, deep=True):
+        return { name : getattr(self, name, None)
+                 for name in self._get_param_names() }
+
+    def _get_param_names(self):
+        return self.trait_names()
+
+    def set_params(self, **params):
+        self.trait_set(**params)
+        return self
     
     def fit(self, data, target):
         raise NotImplementedError
@@ -56,7 +67,3 @@ class SupervisedNeuralRunner(NeuralRunner):
         """
         predicted = self.predict(data)
         return np.sum(predicted == target) / float(len(target))
-
-    def set_params(self, **params):
-        self.trait_set(**params)
-        return self

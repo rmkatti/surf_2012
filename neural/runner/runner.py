@@ -40,10 +40,7 @@ class Runner(HasTraits):
         self.verbose = namespace.verbose
 
         # Execute the runner, saving output if necessary.
-        try:
-            self.start()
-        finally:
-            print self.output
+        self.start()
         if self.outfile:
             self.save()
 
@@ -54,7 +51,7 @@ class Runner(HasTraits):
         """
         self.start_time = datetime.datetime.now()
         try:
-            with redirect_output() as io:
+            with redirect_output(echo=True) as io:
                 return self.run()
         finally:
             self.end_time = datetime.datetime.now()
