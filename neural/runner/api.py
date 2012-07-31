@@ -1,2 +1,2 @@
 from benchmark import BenchmarkRunner
-from runner import Runner, NeuralRunner
+from runner import Runner, NeuralRunner, SupervisedNeuralRunner

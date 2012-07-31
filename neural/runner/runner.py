@@ -2,6 +2,7 @@
 import datetime
 
 # System library imports.
+import numpy as np
 from traits.api import HasTraits, Any, BaseInstance, Dict, Either, File, \
     Float, Int, List, Str, Type
 
@@ -95,3 +96,30 @@ class NeuralRunner(Runner):
     def train(self, machine, data, **kwds):
         return machine.train(data, rate = self.rate, anneal = self.anneal,
                              epochs = self.epochs, **kwds)
+
+
+class SupervisedNeuralRunner(NeuralRunner):
+    """ A runner class for supervised learning with neural networks.
+
+    For convenience, this class implements the scikits-learn supervised
+    'estimator' interface. This permits the use of model selection tools like
+    sklearn.grid_search.
+    """
+
+    # 'Estimator' interface
+    
+    def fit(self, data, target):
+        raise NotImplementedError
+    
+    def predict(self, data):
+        raise NotImplementedError
+
+    def score(self, data, target):
+        """ By default, returns the classification success rate.
+        """
+        predicted = self.predict(data)
+        return np.sum(predicted == target) / float(len(target))
+
+    def set_params(self, **params):
+        self.trait_set(**params)
+        return self
