@@ -6,8 +6,8 @@ from helmholtz_bayesian import BayesianHelmholtzMachine
 from utils.math import logit, sigmoid
 
 
-class SparseHelmholtzMachine(BayesianHelmholtzMachine):
-    """ An HM that forms sparse representations in its hidden layers.
+class SparseLadderedHelmholtzMachine(BayesianHelmholtzMachine):
+    """ A laddered HM that forms sparse representations in its hidden layers.
     """
 
     # BayesianHelmholtzMachine interface
