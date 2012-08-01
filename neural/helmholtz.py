@@ -26,7 +26,7 @@ class HelmholtzMachine(object):
         """
         self.topology = list(topology)
         self.G = self._create_layer_weights(topology)
-        self.G_bias = np.zeros(topology[0])
+        self.G_top = np.zeros(topology[0])
         self.R = self._create_layer_weights(topology[::-1])
 
     def train(self, data, rate=None, anneal=None, epochs=None,
@@ -137,7 +137,7 @@ class HelmholtzMachine(object):
         A (list of) 2D sample array(s), where the first dimension indexes the
         individual samples. See 'all_layers' parameter.
         """
-        d = self.G_bias if top_units is None else top_units
+        d = self.G_top if top_units is None else top_units
         if size is not None:
             d = np.tile(d, (size,1))
         if top_units is None:
@@ -183,18 +183,18 @@ class HelmholtzMachine(object):
         sample of the hidden units.
         """
         probs = _probs_for_factorial_network(self.G, samples)
-        probs.insert(0, sigmoid(self.G_bias))
+        probs.insert(0, sigmoid(self.G_top))
         return probs
 
     def _wake(self, sample, data_size, epochs, rate):
         """ Run a wake cycle.
         """
-        return _wake(sample, self.G, self.G_bias, self.R, rate)
+        return _wake(sample, self.G, self.G_top, self.R, rate)
 
     def _sleep(self, data_size, epochs, rate):
         """ Run a sleep cycle.
         """
-        return _sleep(self.G, self.G_bias, self.R, rate)
+        return _sleep(self.G, self.G_top, self.R, rate)
 
 # Helmholtz machine internals
 
@@ -210,13 +210,13 @@ def _probs_for_factorial_network(layers, samples):
              for L, s in izip(layers, samples) ]
         
 # Reference/fallback implementation
-def _wake(sample, G, G_bias, R, rate):
+def _wake(sample, G, G_top, R, rate):
     # Sample data from the recognition network.
     samples = _sample_factorial_network(R, sample)
     samples.reverse()
         
     # Pass back down through the generation network and adjust weights.
-    G_bias += rate[0] * (samples[0] - sigmoid(G_bias))
+    G_top += rate[0] * (samples[0] - sigmoid(G_top))
     G_probs = _probs_for_factorial_network(G, samples)
     for G_weights, inputs, target, generated, step \
             in izip(G, samples, samples[1:], G_probs, rate[1:]):
@@ -224,9 +224,9 @@ def _wake(sample, G, G_bias, R, rate):
         G_weights[-1] += step * (target - generated)
 
 # Reference/fallback implementation
-def _sleep(G, G_bias, R, rate):
+def _sleep(G, G_top, R, rate):
     # Generate a dream.
-    d = sample_indicator(sigmoid(G_bias))
+    d = sample_indicator(sigmoid(G_top))
     dreams = _sample_factorial_network(G, d)
     dreams.reverse()
 
