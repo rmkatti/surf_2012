@@ -105,29 +105,42 @@ def _parse_sequence(value):
         current.truncate(0)
 
     def error():
-        raise ValueError("Mismatched brackets in value %r" % value)
+        raise SyntaxError("Mismatched brackets in value %r" % value)
 
-    # Strip off enclosing brackets, if present.
+    def reset():
+        del items[:]
+        current.truncate(0)
+
+    # Split on commas at zero bracket level.
+    def split(value):
+        stack = deque()
+        for c in value.strip():
+            if c in delimiters.iterkeys():
+                try:
+                    assert stack.pop() == delimiters[c]
+                except (AssertionError, IndexError):
+                    error()
+            elif c in delimiters.itervalues():
+                stack.append(c)
+            if c == ',' and len(stack) == 0:
+                flush()
+            else:
+                current.write(c)
+        flush() if len(stack) == 0 else error()
+
+    # For command-line convenience, we consider outer brackets optional.
+    # Technically, this makes the grammar ambiguous, but we cover the usual
+    # cases by backtracking.
     value = value.strip()
     start = delimiters.get(value[-1])
     if start and value[0] == start:
-        value = value[1:-1]
-            
-    # Split on commas at zero bracket level.
-    stack = deque()
-    for c in value.strip():
-        if c in delimiters.iterkeys():
-            try:
-                assert stack.pop() == delimiters[c]
-            except (AssertionError, IndexError):
-                error()
-        elif c in delimiters.itervalues():
-            stack.append(c)
-        if c == ',' and len(stack) == 0:
-            flush()
-        else:
-            current.write(c)
-    flush() if len(stack) == 0 else error()
+        try:
+            split(value[1:-1])
+        except SyntaxError:
+            reset()
+            split(value)
+    else:
+        split(value)
 
     return items
 

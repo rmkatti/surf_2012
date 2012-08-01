@@ -11,8 +11,10 @@ from neural.runner.traits_argparse import parse_array, parse_compound, \
 
 def test_nested_sequence():
     trait = List(List(Int))
-    assert_equal([[1, 2], [3, 4]],
-                 parse_list(trait, '[[1, 2], [3, 4]]'))
+    x = [[1, 2], [3, 4]]
+    for y in [ parse_list(trait, '[[1, 2], [3, 4]]'),
+               parse_list(trait, '[1,2],[3,4]') ]:
+        assert_equal(x, y)
 
     trait = Dict(Str, List(Int))
     assert_equal(dict(foo=[1,2], bar=[3,4]),
