@@ -106,7 +106,6 @@ class LadderedHelmholtzMachine(HelmholtzMachine):
         return [ np.zeros((layer, lateral_len))
                  for layer, lateral_len in izip(topology, lateral_lens) ]
 
-
 # Laddered Helmholtz machine internals
 
 def _sample_laddered_layer(lateral, s):

@@ -1,7 +1,7 @@
 # System library imports.
 import numpy as np
 
-
+# Optimized ufuncs.
 try:
     from _math import logit, logistic, sigmoid, sample_indicator
 
@@ -19,7 +19,19 @@ except ImportError:
 
     def sample_indicator(p, out=None):
         """ Yields 1 with probability p and 0 with probability 1-p. """
-        p = np.array(p, copy=0)
+        p = np.array(p, dtype=np.double, copy=0)
         if out is None:
-            out = np.ndarray(p.shape, dtype=float)
-        return np.less(np.random.sample(p.shape), p, out)
+            out = np.empty(p.shape, dtype=np.double)
+        return np.less(np.random.random(p.shape), p, out)
+
+
+def sample_discrete(p, size=None):
+    """ Samples from an arbitrary discrete distribution.
+    """
+    p = np.array(p, dtype=np.double, ndmin=1, copy=0)
+    if p.ndim != 1:
+        raise ValueError("p must be 1-dimensional")
+
+    cdf = p.cumsum()
+    idx = cdf.searchsorted(np.random.random(size), side='right')
+    return idx

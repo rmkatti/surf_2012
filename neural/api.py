@@ -1,3 +1,4 @@
+from boltzmann_sparse import SparseBoltzmannMachine
 from helmholtz import HelmholtzMachine
 from helmholtz_bayesian import BayesianHelmholtzMachine
 from helmholtz_laddered import LadderedHelmholtzMachine
