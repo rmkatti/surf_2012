@@ -21,7 +21,7 @@ class SupervisedDigitsRunner(SupervisedNeuralRunner):
 
     # SupervisedDigitsRunner configuration.
     digits = List(Int, range(10), config=True)
-    data_path = File(config=True, transient=False)
+    data_path = File(config=True, transient=True)
 
     # Results.
     error_rate = Float

@@ -14,7 +14,7 @@ The core dependencies for this project are:
 * BLAS (including headers)
 * GSL (including headers)
 
-The UI layer and example runner require libraries from ETS 4.2:
+The UI layer and examples require libraries from ETS 4.2:
 
 * Traits
 * Traits UI
@@ -24,6 +24,7 @@ Finally, the project has several *optional* dependencies:
 
 * jsonpickle 0.4.0 (for serialization routines)
 * matplotlib 1.1 (for certain examples)
+* scikit-learn 0.11 (for grid search hyperparameter selection)
 
 Note that older versions of the indicated packages may work, but they have not
 been tested.

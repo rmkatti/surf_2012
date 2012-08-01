@@ -50,7 +50,9 @@ class SupervisedNeuralRunner(NeuralRunner):
                  for name in self._get_param_names() }
 
     def _get_param_names(self):
-        return self.trait_names()
+        names = self.trait_names()
+        ignore = ['trait_added', 'trait_modified']
+        return list(set(names).difference(ignore))
 
     def set_params(self, **params):
         self.trait_set(**params)
