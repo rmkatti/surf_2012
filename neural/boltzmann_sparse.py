@@ -6,17 +6,17 @@ import numpy as np
 
 # Local imports.
 from helmholtz import HelmholtzMachine
-from utils.math import sample_discrete, sample_indicator, sigmoid
+from utils.math import sample_exclusive_indicators, sample_indicator, sigmoid
 
 # Sparse Boltzmann machine public API
 
 class SparseBoltzmannMachine(HelmholtzMachine):
     """ A cross between a Boltzmann machine and a Helmholtz machine.
 
-    The network is multi-layered like the Helmholtz machine and learns using a
-    variant of the wake-sleep algorithm. Individual layers, however, have
-    undirected lateral connections, as in the Boltzmann machine. Inference is
-    made tractable by enforcing a strict sparsity assumption.
+    The network is multi-layered like the Helmholtz machine and learns using the
+    wake-sleep algorithm. Individual layers, however, have undirected lateral
+    connections, as in the Boltzmann machine. Inference is made tractable by
+    enforcing a strict sparsity assumption.
     """
 
     # HelmholtzMachine interface
@@ -101,19 +101,12 @@ def _sample_boltzmann_layer(group_size, s):
     if group_size == 1:
         return sample_indicator(sigmoid(s, out=s), out=s)
 
-    orig_shape = s.shape
-    s.shape = (-1, group_size)
-
+    s.shape = s.shape[:-1] + (-1, group_size)
     np.exp(s, out=s)
-    Z = 1.0 + s.sum(axis=1)
-    np.divide(s, Z[:,np.newaxis], out=s)
-    for group in s:
-        idx = sample_discrete(group)
-        group[:] = 0.0
-        if idx < group.size:
-            group[idx] = 1.0
-
-    s.shape = orig_shape
+    Z = 1.0 + s.sum(axis=-1)
+    np.divide(s, Z[...,np.newaxis], out=s)
+    sample_exclusive_indicators(s, axis=-1, out=s)
+    s.shape = s.shape[:-2] + (-1,)
     return s
 
 def _sample_boltzmann_network(layers, group_sizes, s):

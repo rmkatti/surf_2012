@@ -3,7 +3,8 @@ import numpy as np
 
 # Optimized ufuncs.
 try:
-    from _math import logit, logistic, sigmoid, sample_indicator
+    from _math import logit, logistic, sigmoid, \
+        sample_exclusive_indicators, sample_indicator
 
 except ImportError:
     print 'WARNING: Optimized math functions not available.'
@@ -17,21 +18,27 @@ except ImportError:
         return 1 / (1 + np.exp(-x))
     sigmoid = logistic
 
+    def sample_exclusive_indicators(p, axis=-1, out=None):
+        """ Samples a bit vector of mutually exclusive indicator variables.
+        """
+        def sample_exclusive_indicators_1d(p):
+            cdf = p.cumsum()
+            idx = cdf.searchsorted(np.random.random(), side='right')
+            out = np.zeros(p.size)
+            if idx < out.size:
+                out[idx] = 1.0
+            return out
+
+        # XXX: apply_along_axis does not support 'out'.
+        s = np.apply_along_axis(sample_exclusive_indicators_1d, axis, p)
+        if out is None: out = s
+        else: out[:] = s
+        return out
+
     def sample_indicator(p, out=None):
-        """ Yields 1 with probability p and 0 with probability 1-p. """
+        """ Yields 1 with probability p and 0 with probability 1-p. 
+        """
         p = np.array(p, dtype=np.double, copy=0)
         if out is None:
             out = np.empty(p.shape, dtype=np.double)
         return np.less(np.random.random(p.shape), p, out)
-
-
-def sample_discrete(p, size=None):
-    """ Samples from an arbitrary discrete distribution.
-    """
-    p = np.array(p, dtype=np.double, ndmin=1, copy=0)
-    if p.ndim != 1:
-        raise ValueError("p must be 1-dimensional")
-
-    cdf = p.cumsum()
-    idx = cdf.searchsorted(np.random.random(size), side='right')
-    return idx
