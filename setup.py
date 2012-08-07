@@ -11,6 +11,8 @@ setup(
         Extension('neural.external.tokyo',
                   ['neural/external/tokyo.pyx'],
                   libraries = ['blas']),
+        Extension('neural._boltzmann_sparse',
+                  ['neural/_boltzmann_sparse.pyx']),
         Extension('neural._helmholtz',
                   ['neural/_helmholtz.pyx']),
         Extension('neural._helmholtz_bayesian',

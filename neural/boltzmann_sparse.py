@@ -102,9 +102,7 @@ def _sample_boltzmann_layer(group_size, s):
         return sample_indicator(sigmoid(s, out=s), out=s)
 
     s.shape = s.shape[:-1] + (-1, group_size)
-    np.exp(s, out=s)
-    Z = 1.0 + s.sum(axis=-1)
-    np.divide(s, Z[...,np.newaxis], out=s)
+    boltzmann_dist(s, axis=-1, out=s)
     sample_exclusive_indicators(s, axis=-1, out=s)
     s.shape = s.shape[:-2] + (-1,)
     return s
@@ -123,9 +121,7 @@ def _probs_for_boltzmann_layer(group_size, p):
         return sigmoid(p, out=p)
     
     p.shape = p.shape[:-1] + (-1, group_size)
-    np.exp(p, out=p)
-    Z = 1.0 + p.sum(axis=-1)
-    np.divide(p, Z[...,np.newaxis], out=p)
+    boltzmann_dist(p, axis=-1, out=p)
     p.shape = p.shape[:-2] + (-1,)
     return p
 
@@ -166,3 +162,18 @@ def _sleep(group_sizes, G, G_top, R, rate):
             in izip(R, dreams, dreams[1:], R_probs, rate[::-1]):
         R_weights[:-1] += step * np.outer(inputs, target - recognized)
         R_weights[-1] += step * (target - recognized)
+
+try:
+    from _boltzmann_sparse import boltzmann_dist
+except ImportError:
+    print 'WARNING: Optimized sparse Boltzmann machine not available.'
+
+    def boltzmann_dist(x, axis=-1, out=None):
+        """ Compute the Boltzmann distribution (at fundamental temperature 1)
+        for an array of energies. An extra 'zero-point' energy is included.
+        """
+        if out is None:
+            out = np.empty(x.shape, dtype=np.double)
+        exp_x = np.exp(x, out=out)
+        Z = np.expand_dims(1.0 + exp_x.sum(axis=axis), axis)
+        return np.divide(exp_x, Z, out=out)
