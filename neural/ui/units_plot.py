@@ -100,5 +100,5 @@ if __name__ == '__main__':
     x = np.random.random((2, 20)) < 0.5
     layers = [y, x]
 
-    plot = UnitsPlot(editable=True, layers=layers)
+    plot = UnitsPlot(editable=True, layers=layers, pixel_size=25)
     plot.configure_traits()
