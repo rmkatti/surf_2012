@@ -8,11 +8,14 @@ import chaco.default_colormaps as cm
 
 
 class UnitsPlot(HasTraits):
+    """ Plots multiple layers of binary-valued neural network units.
+    """
 
+    # Whether the state of the units is toggle-able.
     editable = Bool(False)
 
     layers = List(Array)
-    pixel_size = Range(low=1, value=25)
+    pixel_size = Range(low=1, value=10)
 
     plot = Instance(Component)
     traits_view = View(Item('plot',

@@ -1,18 +1,17 @@
 # System library imports.
-import numpy as np
 from pyface.api import FileDialog, OK
 from pyface.tasks.action.api import SGroup, SMenu, SMenuBar, TaskAction
 from pyface.tasks.api import Task, TaskLayout, PaneItem, VSplitter, \
-    TraitsTaskPane, TraitsDockPane
-from traits.api import Any, Array, Bool, Button, DelegatesTo, Enum, Instance
+    AdvancedEditorAreaPane, IEditorAreaPane, TraitsDockPane
+from traits.api import Bool, Button, DelegatesTo, Enum, Instance, Property
 from traitsui.api import View, HGroup, VGroup, Item, Label, EnumEditor, \
-    RangeEditor, TabularEditor, spring
+    InstanceEditor, RangeEditor, TabularEditor, spring
 from traitsui.tabular_adapter import TabularAdapter
 
 # Local imports
-from neural.helmholtz import HelmholtzMachine
-from neural.ui.units_plot import UnitsPlot
+from neural.runner.api import Runner
 from neural.utils.serialize import load
+from editors import LayersEditor
 
 
 class HelmholtzVisTask(Task):
@@ -23,24 +22,24 @@ class HelmholtzVisTask(Task):
     name = 'Helmholtz Machine Visualization'
 
     menu_bar = SMenuBar(
-        SMenu(TaskAction(name = 'Open File',
+        SMenu(TaskAction(name = '&Open',
                          method = 'open',
                          accelerator = 'Ctrl+O'),
               id='File', name='&File'))
 
     #### 'HelmholtzVisTask' interface #########################################
-
-    machine = Any # Instance(HelmholtzMachine)
-
-    layer_shapes = Array(dtype=int, shape=(None,2))
-    plot = Instance(UnitsPlot)
+    
+    editor_area = Instance(IEditorAreaPane)
 
     ###########################################################################
     # 'Task' interface.
     ###########################################################################
 
     def create_central_pane(self):
-        return CentralPane()
+        self.editor_area = editor_area = AdvancedEditorAreaPane()
+        editor_area.register_factory(LayersEditor, 
+                                     lambda obj: isinstance(obj, Runner))
+        return editor_area
 
     def create_dock_panes(self):
         return [ SamplingPane(), LayerDisplayPane() ]
@@ -55,22 +54,8 @@ class HelmholtzVisTask(Task):
                             wildcard = 'JSON files (*.json)|*.json|')
         if dialog.open() == OK:
             runner = load(dialog.path)
-            self.machine = getattr(runner, 'machine', None)
-
-    def sample(self, model = 'generative', clamp_top_units = False):
-        plot = self.plot
-        if model == 'generative':
-            data = None
-            if clamp_top_units:
-                data = plot.layers[0].flatten()
-            layers = self.machine.sample_generative_dist(all_layers=True, 
-                                                         top_units=data)
-        elif model == 'recognition':
-            data = plot.layers[-1].flatten()
-            layers = self.machine.sample_recognition_dist(data)
-        else:
-            raise ValueError('Unknown model type %r' % model)
-        plot.layers = map(np.reshape, layers, self.layer_shapes)
+            runner.outfile = dialog.path
+            self.editor_area.edit(runner)
 
     ###########################################################################
     # Protected interface.
@@ -82,37 +67,6 @@ class HelmholtzVisTask(Task):
         return TaskLayout(
             left=VSplitter(PaneItem('neural.helmholtz_vis.sampling_pane'),
                            PaneItem('neural.helmholtz_vis.layer_display_pane')))
-
-    def _plot_default(self):
-        return UnitsPlot(editable = True)
-
-    #### Trait change handlers ################################################
-
-    def _layer_shapes_changed(self):
-        plot = self.plot
-        if plot.layers:
-            plot.layers = map(np.reshape, plot.layers, self.layer_shapes)
-
-    def _machine_changed(self):
-        machine = self.machine
-        plot = self.plot
-        plot.layers = []
-        if machine:
-            layer_topology = np.prod(self.layer_shapes, axis=1)
-            if not np.all(layer_topology == machine.topology):
-                self.layer_shapes = [ (1,size) for size in machine.topology ]
-            plot.layers = map(np.zeros, self.layer_shapes)
-
-
-class CentralPane(TraitsTaskPane):
-
-    id = 'neural.helmholtz_vis.central_pane'
-    name = 'Helmholtz Visualization Pane'
-
-    traits_view = View(Item('object.task.plot',
-                            show_label = False,
-                            style = 'custom'),
-                       resizable = True)
 
 
 class SamplingPane(TraitsDockPane):
@@ -142,8 +96,10 @@ class SamplingPane(TraitsDockPane):
                     resizable = True)
 
     def _sample_button_fired(self):
-        self.task.sample(model = self.machine_model,
-                         clamp_top_units = self.clamp_top_units)
+        editor = self.task.editor_area.active_editor
+        if editor:
+            editor.sample(model = self.machine_model,
+                          clamp_top_units = self.clamp_top_units)
 
 
 class LayerDisplayPane(TraitsDockPane):
@@ -151,21 +107,31 @@ class LayerDisplayPane(TraitsDockPane):
     id = 'neural.helmholtz_vis.layer_display_pane'
     name = 'Layer Display'
 
+    active_editor = Property(depends_on='task.editor_area.active_editor')
+
     def default_traits_view(self):
         shapes_editor = TabularEditor(adapter = LayerShapesAdapter(),
                                       operations = ['edit'])
         pixel_size_editor = RangeEditor(is_float = False,
                                         low = 1, high=128,
                                         mode = 'spinner')
-        return View(VGroup(HGroup(Label('Pixel size:'),
-                                  Item('object.task.plot.pixel_size',
-                                       editor = pixel_size_editor,
-                                       show_label = False)),
-                           Label('Layer shapes:'),
-                           Item('object.task.layer_shapes',
-                                editor = shapes_editor,
+        view = View(HGroup(Label('Pixel size:'),
+                           Item('object.plot.pixel_size',
+                                editor = pixel_size_editor,
                                 show_label = False)),
-                    resizable = True)                           
+                    Label('Layer shapes:'),
+                    Item('layer_shapes',
+                         editor = shapes_editor,
+                         show_label = False),
+                    resizable = True)
+        return View(Item('active_editor',
+                         editor = InstanceEditor(view=view),
+                         show_label = False,
+                         style = 'custom'),
+                    resizable = True)
+
+    def _get_active_editor(self):
+        return self.task.editor_area.active_editor
 
 
 class LayerShapesAdapter(TabularAdapter):
