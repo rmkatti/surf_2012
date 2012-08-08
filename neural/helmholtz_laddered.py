@@ -86,13 +86,13 @@ class LadderedHelmholtzMachine(HelmholtzMachine):
         probs.insert(0, p)
         return probs
 
-    def _wake(self, sample, data_size, epochs, rate):
+    def _wake(self, sample, data_size, iteration, rate):
         """ Run a wake cycle.
         """
         return _wake(sample, self.G, self.G_lateral, self.R, self.R_lateral,
                      rate)
 
-    def _sleep(self, data_size, epochs, rate):
+    def _sleep(self, data_size, iteration, rate):
         """ Run a sleep cycle.
         """
         return _sleep(self.G, self.G_lateral, self.R, self.R_lateral, rate)

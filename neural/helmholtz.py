@@ -84,8 +84,8 @@ class HelmholtzMachine(object):
             indices = np.random.permutation(data_size)
             for index in indices:
                 sample = data[index]
-                self._wake(sample, data_size, epochs, rate)
-                self._sleep(data_size, epochs, rate)
+                self._wake(sample, data_size, iteration, rate)
+                self._sleep(data_size, iteration, rate)
 
                 if yield_call and next_yield == iteration:
                     next_yield += yield_at
@@ -186,12 +186,12 @@ class HelmholtzMachine(object):
         probs.insert(0, sigmoid(self.G_top))
         return probs
 
-    def _wake(self, sample, data_size, epochs, rate):
+    def _wake(self, sample, data_size, iteration, rate):
         """ Run a wake cycle.
         """
         return _wake(sample, self.G, self.G_top, self.R, rate)
 
-    def _sleep(self, data_size, epochs, rate):
+    def _sleep(self, data_size, iteration, rate):
         """ Run a sleep cycle.
         """
         return _sleep(self.G, self.G_top, self.R, rate)

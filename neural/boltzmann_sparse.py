@@ -84,12 +84,12 @@ class SparseBoltzmannMachine(HelmholtzMachine):
         probs.insert(0, p)
         return probs
 
-    def _wake(self, sample, data_size, epochs, rate):
+    def _wake(self, sample, data_size, iteration, rate):
         """ Run a wake cycle.
         """
         return _wake(sample, self.group_sizes, self.G, self.G_top, self.R, rate)
 
-    def _sleep(self, data_size, epochs, rate):
+    def _sleep(self, data_size, iteration, rate):
         """ Run a sleep cycle.
         """
         return _sleep(self.group_sizes, self.G, self.G_top, self.R, rate)
