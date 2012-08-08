@@ -19,6 +19,7 @@ The UI layer and examples require libraries from ETS 4.2:
 * Traits
 * Traits UI
 * Chaco
+* Envisage
 
 Finally, the project has several *optional* dependencies:
 
