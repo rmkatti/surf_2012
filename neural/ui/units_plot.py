@@ -1,5 +1,5 @@
 # System library imports.
-from traits.api import Array, Bool, List, HasTraits, Instance, Int, \
+from traits.api import Array, Bool, List, HasTraits, Instance, Range, \
     on_trait_change
 from traitsui.api import Item, View
 from enable.api import BaseTool, Component, ComponentEditor
@@ -12,7 +12,7 @@ class UnitsPlot(HasTraits):
     editable = Bool(False)
 
     layers = List(Array)
-    pixel_size = Int(25)
+    pixel_size = Range(low=1, value=25)
 
     plot = Instance(Component)
     traits_view = View(Item('plot',
