@@ -1,10 +1,12 @@
 # System library imports.
-from traits.api import Array, Bool, List, HasTraits, Instance, Range, \
-    on_trait_change
+from traits.api import Array, Bool, List, HasTraits, Instance, on_trait_change
 from traitsui.api import Item, View
 from enable.api import BaseTool, Component, ComponentEditor
-from chaco.api import ArrayPlotData, ImagePlot, Plot, VPlotContainer
+from chaco.api import ArrayPlotData, ImagePlot, Plot
 import chaco.default_colormaps as cm
+
+# Local imports.
+from aspect_plot_container import VAspectPlotContainer
 
 
 class UnitsPlot(HasTraits):
@@ -14,8 +16,8 @@ class UnitsPlot(HasTraits):
     # Whether the state of the units is toggle-able.
     editable = Bool(False)
 
-    layers = List(Array)
-    pixel_size = Range(low=1, value=10)
+    # The list of 2-dimensional binary-valued units matrices to visualize.
+    layers = List(Array(shape=(None,None)))
 
     plot = Instance(Component)
     traits_view = View(Item('plot',
@@ -23,18 +25,18 @@ class UnitsPlot(HasTraits):
                             show_label = False),
                        resizable = True)
 
-    @on_trait_change('editable, layers, pixel_size')
+    @on_trait_change('editable, layers')
     def rebuild_plot(self):
-        container = VFitPlotContainer(bgcolor = 'lightgray',
-                                      halign = 'center',
-                                      stack_order = 'top_to_bottom')
+        container = VAspectPlotContainer(bgcolor = 'lightgray',
+                                         halign = 'center',
+                                         stack_order = 'top_to_bottom')
         for layer in self.layers:
+            height, width = layer.shape
             data = ArrayPlotData(image = layer)
             plot = Plot(data,
-                        width = layer.shape[1] * self.pixel_size,
-                        height = layer.shape[0] * self.pixel_size,
-                        padding = self.pixel_size,
-                        resizable = '')
+                        aspect_ratio = float(width) / float(height),
+                        width = width, height = height,
+                        padding = 15)
             plot.x_axis.visible = False
             plot.y_axis.visible = False
 
@@ -77,28 +79,12 @@ class UnitToggleTool(BaseTool):
                     image_data.data_changed = True
 
 
-class VFitPlotContainer(VPlotContainer):
-    """ A VPlotContainer that fits its components but uses extra space if
-    available.
-    """
-
-    # Container interface
-    fit_components = 'hv'
-
-    def get_preferred_size(self, components=None):
-        size = super(VPlotContainer, self).get_preferred_size()
-        size = (max(self.outer_bounds[0], size[0]), 
-                max(self.outer_bounds[1], size[1]))
-        self._cached_preferred_size = size
-        return size
-                
-
 if __name__ == '__main__':
     import numpy as np
 
     y = np.random.random((1, 10)) < 0.2
-    x = np.random.random((2, 20)) < 0.5
+    x = np.random.random((5, 20)) < 0.5
     layers = [y, x]
 
-    plot = UnitsPlot(editable=True, layers=layers, pixel_size=25)
+    plot = UnitsPlot(editable=True, layers=layers)
     plot.configure_traits()

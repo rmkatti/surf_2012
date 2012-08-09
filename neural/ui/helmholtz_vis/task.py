@@ -5,7 +5,7 @@ from pyface.tasks.api import Task, TaskLayout, PaneItem, VSplitter, \
     AdvancedEditorAreaPane, IEditorAreaPane, TraitsDockPane
 from traits.api import Bool, Button, DelegatesTo, Enum, Instance, Property
 from traitsui.api import View, HGroup, VGroup, Item, Label, EnumEditor, \
-    InstanceEditor, RangeEditor, TabularEditor, spring
+    InstanceEditor, TabularEditor, spring
 from traitsui.tabular_adapter import TabularAdapter
 
 # Local imports
@@ -25,7 +25,8 @@ class HelmholtzVisTask(Task):
         SMenu(TaskAction(name = '&Open',
                          method = 'open',
                          accelerator = 'Ctrl+O'),
-              id='File', name='&File'))
+              id='File', name='&File'),
+        SMenu(id='View', name='&View'))
 
     #### 'HelmholtzVisTask' interface #########################################
     
@@ -112,14 +113,7 @@ class LayerDisplayPane(TraitsDockPane):
     def default_traits_view(self):
         shapes_editor = TabularEditor(adapter = LayerShapesAdapter(),
                                       operations = ['edit'])
-        pixel_size_editor = RangeEditor(is_float = False,
-                                        low = 1, high=128,
-                                        mode = 'spinner')
-        view = View(HGroup(Label('Pixel size:'),
-                           Item('object.plot.pixel_size',
-                                editor = pixel_size_editor,
-                                show_label = False)),
-                    Label('Layer shapes:'),
+        view = View(Label('Layer shapes:'),
                     Item('layer_shapes',
                          editor = shapes_editor,
                          show_label = False),
