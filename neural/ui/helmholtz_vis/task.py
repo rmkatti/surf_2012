@@ -1,3 +1,6 @@
+# Standard library imports.
+import os.path
+
 # System library imports.
 from pyface.api import FileDialog, OK
 from pyface.tasks.action.api import SGroup, SMenu, SMenuBar, TaskAction
@@ -5,7 +8,7 @@ from pyface.tasks.api import Task, TaskLayout, PaneItem, VSplitter, \
     AdvancedEditorAreaPane, IEditorAreaPane, TraitsDockPane
 from traits.api import Bool, Button, DelegatesTo, Enum, Instance, Property
 from traitsui.api import View, HGroup, VGroup, Item, Label, EnumEditor, \
-    InstanceEditor, TabularEditor, spring
+    ImageEnumEditor, InstanceEditor, TabularEditor, spring
 from traitsui.tabular_adapter import TabularAdapter
 
 # Local imports
@@ -43,7 +46,7 @@ class HelmholtzVisTask(Task):
         return editor_area
 
     def create_dock_panes(self):
-        return [ SamplingPane(), LayerDisplayPane() ]
+        return [ SamplingPane(), ToolsPane() ]
 
     ###########################################################################
     # 'HelmholtzVisTask' interface.
@@ -51,6 +54,7 @@ class HelmholtzVisTask(Task):
 
     def open(self):
         dialog = FileDialog(action = 'open',
+                            default_directory = os.path.expanduser('~'),
                             parent = self.window.control,
                             wildcard = 'JSON files (*.json)|*.json|')
         if dialog.open() == OK:
@@ -67,7 +71,7 @@ class HelmholtzVisTask(Task):
     def _default_layout_default(self):
         return TaskLayout(
             left=VSplitter(PaneItem('neural.helmholtz_vis.sampling_pane'),
-                           PaneItem('neural.helmholtz_vis.layer_display_pane')))
+                           PaneItem('neural.helmholtz_vis.tools_pane')))
 
 
 class SamplingPane(TraitsDockPane):
@@ -78,6 +82,7 @@ class SamplingPane(TraitsDockPane):
     machine_model = Enum('generative', 'recognition')
     clamp_top_units = Bool(False)
 
+    active_editor = Property(depends_on='task.editor_area.active_editor')
     sample_button = Button(label='Sample!')
 
     def default_traits_view(self):
@@ -92,31 +97,42 @@ class SamplingPane(TraitsDockPane):
                                        show_label = False),
                                   enabled_when = "machine_model=='generative'"),
                            #spring,
-                           Item('sample_button'),
+                           Item('sample_button',
+                                enabled_when = 'active_editor'),
                            show_labels = False),
                     resizable = True)
 
-    def _sample_button_fired(self):
+    def _get_active_editor(self):
         editor = self.task.editor_area.active_editor
-        if editor:
-            editor.sample(model = self.machine_model,
-                          clamp_top_units = self.clamp_top_units)
+        return editor if isinstance(editor, LayersEditor) else None
+
+    def _sample_button_fired(self):
+        if self.active_editor:
+            self.active_editor.sample(model = self.machine_model,
+                                      clamp_top_units = self.clamp_top_units)
 
 
-class LayerDisplayPane(TraitsDockPane):
+class ToolsPane(TraitsDockPane):
     
-    id = 'neural.helmholtz_vis.layer_display_pane'
-    name = 'Layer Display'
+    id = 'neural.helmholtz_vis.tools_pane'
+    name = 'Tools'
 
     active_editor = Property(depends_on='task.editor_area.active_editor')
 
     def default_traits_view(self):
+        tool_editor = ImageEnumEditor(values = {'activate': 'search',
+                                                'toggle': 'pencil'},
+                                      cols = 4,
+                                      klass = ToolsPane)
         shapes_editor = TabularEditor(adapter = LayerShapesAdapter(),
                                       operations = ['edit'])
-        view = View(Label('Layer shapes:'),
-                    Item('layer_shapes',
-                         editor = shapes_editor,
-                         show_label = False),
+        view = View(VGroup(Item('tool',
+                                editor = tool_editor,
+                                style = 'custom'),
+                           Label('Layer shapes:'),
+                           Item('layer_shapes',
+                                editor = shapes_editor),
+                           show_labels = False),
                     resizable = True)
         return View(Item('active_editor',
                          editor = InstanceEditor(view=view),
@@ -125,7 +141,8 @@ class LayerDisplayPane(TraitsDockPane):
                     resizable = True)
 
     def _get_active_editor(self):
-        return self.task.editor_area.active_editor
+        editor = self.task.editor_area.active_editor
+        return editor if isinstance(editor, LayersEditor) else None
 
 
 class LayerShapesAdapter(TabularAdapter):

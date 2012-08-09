@@ -1,0 +1,14 @@
+The icons are mostly derived work from other icons. As such they are
+licensed accordingly to the original license:
+
+Project                 License                 File
+----------------------------------------------------------------------------
+Raphael.js              MIT                     image_LICENSE_raphael.txt
+
+Unless stated in this file, icons are the work of Evan Patterson, and are
+released under a Simplified BSD license.
+
+File                    Original Author
+----------------------------------------------------------------------------
+pencil.svg              Raphael.js
+search.svg              Raphael.js

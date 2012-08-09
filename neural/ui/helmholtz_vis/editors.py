@@ -4,13 +4,13 @@ import os.path
 # System library imports.
 import numpy as np
 from pyface.tasks.api import TraitsEditor
-from traits.api import Any, Array, Bool, Instance
+from traits.api import Any, Array, Bool, DelegatesTo, Instance
 from traitsui.api import View, Item
 
 # Local imports
 from neural.helmholtz import HelmholtzMachine
 from neural.runner.api import Runner
-from neural.ui.units_plot import UnitsPlot
+from neural.ui.api import UnitsPlot, WeightsPlot
 
 
 class LayersEditor(TraitsEditor):
@@ -24,8 +24,10 @@ class LayersEditor(TraitsEditor):
     machine = Any # Instance(HelmholtzMachine)
 
     layer_shapes = Array(dtype=int, shape=(None,2))
-    plot = Instance(UnitsPlot)
+    tool = DelegatesTo('plot')
 
+    activated = DelegatesTo('plot')
+    plot = Instance(UnitsPlot)
     traits_view = View(Item('plot',
                             show_label = False,
                             style = 'custom'),
@@ -34,6 +36,17 @@ class LayersEditor(TraitsEditor):
     ###########################################################################
     # 'LayersEditor' interface.
     ###########################################################################
+
+    def edit_weights(self, layer, row, col):
+        W = self.machine.G[layer]
+        w = W[row * self.layer_shapes[layer][0] + col]
+        w = w.reshape(self.layer_shapes[layer+1])
+
+        name = 'Layer {}, Unit ({},{})'.format(layer+1, row+1, col+1)
+        title = '{} - {}'.format(self.name, name)
+        editor = WeightsEditor(obj=w, name=name, title=title)
+        self.editor_area.add_editor(editor)
+        return editor
 
     def sample(self, model = 'generative', clamp_top_units = False):
         plot = self.plot
@@ -57,9 +70,12 @@ class LayersEditor(TraitsEditor):
     #### Trait initializers ###################################################
 
     def _plot_default(self):
-        return UnitsPlot(editable = True)
+        return UnitsPlot(tool = 'toggle')
 
     #### Trait change handlers ################################################
+
+    def _activated_fired(self, idx):
+        self.edit_weights(*idx)
 
     def _layer_shapes_changed(self):
         plot = self.plot
@@ -79,3 +95,28 @@ class LayersEditor(TraitsEditor):
     def _obj_changed(self):
         self.machine = getattr(self.obj, 'machine', None)
         self.name = os.path.basename(self.obj.outfile)
+
+
+class WeightsEditor(TraitsEditor):
+
+    #### 'Editor' interface ###################################################
+
+    obj = Array(dtype=np.double, shape=(None,None))
+
+    #### 'LayersEditor' interface #############################################
+
+    plot = Instance(WeightsPlot, ())
+    title = DelegatesTo('plot')
+    traits_view = View(Item('plot',
+                            show_label = False,
+                            style = 'custom'),
+                       resizable = True)    
+    
+    ###########################################################################
+    # Protected interface.
+    ###########################################################################
+
+    #### Trait change handlers ################################################
+
+    def _obj_changed(self):
+        self.plot.weights = self.obj
