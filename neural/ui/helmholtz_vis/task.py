@@ -124,11 +124,17 @@ class ToolsPane(TraitsDockPane):
                                                 'toggle': 'pencil'},
                                       cols = 4,
                                       klass = ToolsPane)
+        style_editor = EnumEditor(values = {'heat': 'Heat map',
+                                            'hinton': 'Hinton diagram'})
         shapes_editor = TabularEditor(adapter = LayerShapesAdapter(),
                                       operations = ['edit'])
         view = View(VGroup(Item('tool',
                                 editor = tool_editor,
                                 style = 'custom'),
+                           HGroup(Label('Inspector style:'),
+                                  Item('weights_plot_style',
+                                       editor = style_editor,
+                                       show_label = False)),
                            Label('Layer shapes:'),
                            Item('layer_shapes',
                                 editor = shapes_editor),

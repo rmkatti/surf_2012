@@ -4,13 +4,13 @@ import os.path
 # System library imports.
 import numpy as np
 from pyface.tasks.api import TraitsEditor
-from traits.api import Any, Array, Bool, DelegatesTo, Instance
+from traits.api import Any, Array, Bool, DelegatesTo, Enum, Instance, Unicode
 from traitsui.api import View, Item, InstanceEditor
 
 # Local imports
 from neural.helmholtz import HelmholtzMachine
 from neural.runner.api import Runner
-from neural.ui.api import UnitsPlot
+from neural.ui.units_plot import UnitsPlot
 
 
 class LayersEditor(TraitsEditor):
@@ -25,6 +25,7 @@ class LayersEditor(TraitsEditor):
 
     layer_shapes = Array(dtype=int, shape=(None,2))
     tool = DelegatesTo('plot')
+    weights_plot_style = Enum('heat', 'hinton')
 
     activated = DelegatesTo('plot')
     plot = Instance(UnitsPlot)
@@ -37,14 +38,15 @@ class LayersEditor(TraitsEditor):
     # 'LayersEditor' interface.
     ###########################################################################
 
-    def edit_weights(self, layer, row, col):
+    def edit_weights(self, layer, row, col, style=None):
+        style = style or 'heat'
         W = self.machine.G[layer]
         w = W[row * self.layer_shapes[layer][0] + col]
         w = w.reshape(self.layer_shapes[layer+1])
 
         name = 'Layer {}, Unit ({},{})'.format(layer+1, row+1, col+1)
         title = '{} - {}'.format(self.name, name)
-        editor = WeightsEditor(obj=w, name=name, title=title)
+        editor = WeightsEditor(obj=w, name=name, style=style, title=title)
         self.editor_area.add_editor(editor)
         return editor
 
@@ -75,7 +77,7 @@ class LayersEditor(TraitsEditor):
     #### Trait change handlers ################################################
 
     def _activated_fired(self, idx):
-        self.edit_weights(*idx)
+        self.edit_weights(*idx, style=self.weights_plot_style)
 
     def _layer_shapes_changed(self):
         plot = self.plot
@@ -105,8 +107,10 @@ class WeightsEditor(TraitsEditor):
 
     #### 'LayersEditor' interface #############################################
 
+    title = Unicode
+    style = Enum('heat', 'hinton')
+
     plot = Any
-    title = DelegatesTo('plot')
     traits_view = View(Item('plot',
                             editor = InstanceEditor(),
                             show_label = False,
@@ -116,15 +120,32 @@ class WeightsEditor(TraitsEditor):
     ###########################################################################
     # Protected interface.
     ###########################################################################
+    
+    def _create_plot(self):
+        factory = None
+        if self.style == 'heat':
+            from neural.ui.weights_plot import WeightsPlot
+            factory = WeightsPlot
+        elif self.style == 'hinton':
+            from neural.ui.hinton_plot import HintonPlot
+            factory = HintonPlot
+        return factory(weights=self.obj, title=self.title)
 
     #### Trait initializers ###################################################
 
     def _plot_default(self):
-        from neural.ui.api import HintonPlot, WeightsPlot
-        return HintonPlot()    
-        #return WeightsPlot()
+        return self._create_plot()
 
     #### Trait change handlers ################################################
 
     def _obj_changed(self):
-        self.plot.weights = self.obj
+        if self.traits_inited():
+            self.plot.weights = self.obj
+
+    def _style_changed(self):
+        if self.traits_inited():
+            self.plot = self._create_plot()
+
+    def _title_changed(self):
+        if self.traits_inited():
+            self.plot.title = self.title
