@@ -5,7 +5,8 @@ from traitsui.api import Item, View
 from enable.api import Component, ComponentEditor
 from chaco.api import ArrayPlotData, ColorBar, ImagePlot, Plot, \
     HPlotContainer, LinearMapper
-from chaco.ticks import ShowAllTickGenerator
+from chaco.tools.image_inspector_tool import ImageInspectorTool, \
+    ImageInspectorOverlay
 import chaco.default_colormaps as cm
 
 
@@ -34,16 +35,16 @@ class WeightsPlot(HasTraits):
                     aspect_ratio = float(width) / float(height),
                     default_origin = 'top left')
         plot.padding = 25
-        plot.padding_top = 75
         plot.title = self.title
-        plot.x_axis.orientation = 'top'
-        plot.x_axis.tick_in = 0
-        plot.y_axis.tick_in = 0
-        self._update_ticks(plot)
+        plot.x_axis.visible = False
+        plot.y_axis.visible = False
 
-        img_plot = plot.img_plot('image',
+        img_plot = plot.img_plot('image', name='image',
                                  colormap = cm.gray, 
                                  origin = 'top left')[0]
+        inspector = WeightInspectorTool(img_plot)
+        img_plot.tools.append(inspector)
+
         return plot
     
     def _container_default(self):
@@ -61,6 +62,14 @@ class WeightsPlot(HasTraits):
                                    use_backbuffer = True)
         container.add(plot)
         container.add(colorbar)
+
+        inspector = plot.plots['image'][0].tools[0]
+        overlay = ImageInspectorOverlay(component = container,
+                                        image_inspector = inspector,
+                                        bgcolor = 'white',
+                                        border_visible = True)
+        container.overlays.append(overlay)
+
         return container
 
     def _title_changed(self):
@@ -73,16 +82,21 @@ class WeightsPlot(HasTraits):
             plot = self.plot
             plot.aspect_ratio = float(width) / float(height)
             plot.data.set_data('image', self.weights)
-            self._update_ticks(plot)
 
-    def _update_ticks(self, plot):
-        # Align ticks at center, not left/top, of corresponding pixel. Use
-        # the convention that the origin is (1,1).
-        for i, axis in enumerate((plot.y_axis, plot.x_axis)):
-            ticks = np.arange(-0.5, self.weights.shape[i]+1, 5)
-            ticks[0] += 1
-            axis.tick_generator = ShowAllTickGenerator(positions=ticks)
-            axis.tick_label_formatter = lambda tick: str(int(np.ceil(tick)))
+
+class WeightInspectorTool(ImageInspectorTool):
+
+    def normal_mouse_move(self, event):
+        plot = self.component
+        if plot and isinstance(plot, ImagePlot):
+            ndx = plot.map_index((event.x, event.y))
+            if ndx == (None, None):
+                self.new_value = None
+            else:
+                x, y = ndx
+                self.new_value = dict(indices = (x+1,y+1),
+                                      data_value = plot.value.data[y, x])
+                self.last_mouse_position = (event.x, event.y)
 
 
 if __name__ == '__main__':

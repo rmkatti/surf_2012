@@ -112,11 +112,6 @@ class UnitInspectorTool(ImageInspectorTool):
         super(UnitInspectorTool, self).normal_mouse_leave(event)
 
     def normal_mouse_move(self, event):
-        """ Handles the mouse being moved.
-
-        Fires the **new_value** event with the data (if any) from the event's
-        position.
-        """
         plot = self.component
         if plot and isinstance(plot, ImagePlot):
             ndx = plot.map_index((event.x, event.y))
@@ -124,7 +119,7 @@ class UnitInspectorTool(ImageInspectorTool):
                 self.new_value = None
             else:
                 x, y = ndx
-                self.new_value = dict(indices=(x+1, y+1))
+                self.new_value = dict(indices = (x+1,y+1))
                 self.last_mouse_position = (event.x, event.y)
 
 
