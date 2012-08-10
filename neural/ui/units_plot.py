@@ -119,7 +119,7 @@ class UnitInspectorTool(ImageInspectorTool):
                 self.new_value = None
             else:
                 x, y = ndx
-                self.new_value = dict(indices = (x+1,y+1))
+                self.new_value = dict(indices = (y+1,x+1))
                 self.last_mouse_position = (event.x, event.y)
 
 

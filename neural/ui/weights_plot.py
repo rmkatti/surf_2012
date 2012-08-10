@@ -3,8 +3,8 @@ import numpy as np
 from traits.api import Array, HasTraits, Instance, Unicode
 from traitsui.api import Item, View
 from enable.api import Component, ComponentEditor
-from chaco.api import ArrayPlotData, ColorBar, ImagePlot, Plot, \
-    HPlotContainer, LinearMapper
+from chaco.api import ArrayPlotData, ColorBar, Plot, HPlotContainer, \
+    LinearMapper
 from chaco.tools.image_inspector_tool import ImageInspectorTool, \
     ImageInspectorOverlay
 import chaco.default_colormaps as cm
@@ -88,13 +88,13 @@ class WeightInspectorTool(ImageInspectorTool):
 
     def normal_mouse_move(self, event):
         plot = self.component
-        if plot and isinstance(plot, ImagePlot):
+        if plot is not None:
             ndx = plot.map_index((event.x, event.y))
             if ndx == (None, None):
                 self.new_value = None
             else:
                 x, y = ndx
-                self.new_value = dict(indices = (x+1,y+1),
+                self.new_value = dict(indices = (y+1,x+1),
                                       data_value = plot.value.data[y, x])
                 self.last_mouse_position = (event.x, event.y)
 

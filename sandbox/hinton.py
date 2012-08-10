@@ -18,7 +18,7 @@ def hinton(W, max_weight = None):
     """ Draws a Hinton diagram for visualizing a weight matrix. 
     """
     if max_weight is None:
-        max_weight = 2 ** np.ceil(np.log(np.max(np.abs(W))) / np.log(2))
+        max_weight = 2 ** np.ceil(np.log2(np.max(np.abs(W))))
 
     # Temporarily disable matplotlib interactive mode if it is on, 
     # otherwise this takes forever.

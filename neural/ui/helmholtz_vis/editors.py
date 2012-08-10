@@ -5,12 +5,12 @@ import os.path
 import numpy as np
 from pyface.tasks.api import TraitsEditor
 from traits.api import Any, Array, Bool, DelegatesTo, Instance
-from traitsui.api import View, Item
+from traitsui.api import View, Item, InstanceEditor
 
 # Local imports
 from neural.helmholtz import HelmholtzMachine
 from neural.runner.api import Runner
-from neural.ui.api import UnitsPlot, WeightsPlot
+from neural.ui.api import UnitsPlot
 
 
 class LayersEditor(TraitsEditor):
@@ -105,16 +105,24 @@ class WeightsEditor(TraitsEditor):
 
     #### 'LayersEditor' interface #############################################
 
-    plot = Instance(WeightsPlot, ())
+    plot = Any
     title = DelegatesTo('plot')
     traits_view = View(Item('plot',
+                            editor = InstanceEditor(),
                             show_label = False,
                             style = 'custom'),
-                       resizable = True)    
+                       resizable = True)
     
     ###########################################################################
     # Protected interface.
     ###########################################################################
+
+    #### Trait initializers ###################################################
+
+    def _plot_default(self):
+        from neural.ui.api import HintonPlot, WeightsPlot
+        return HintonPlot()    
+        #return WeightsPlot()
 
     #### Trait change handlers ################################################
 
