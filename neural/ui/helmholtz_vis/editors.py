@@ -25,7 +25,8 @@ class LayersEditor(TraitsEditor):
 
     layer_shapes = Array(dtype=int, shape=(None,2))
     tool = DelegatesTo('plot')
-    weights_plot_style = Enum('heat', 'hinton')
+    weights_model = Enum('generative', 'recognition')
+    weights_style = Enum('heat', 'hinton')
 
     activated = DelegatesTo('plot')
     plot = Instance(UnitsPlot)
@@ -38,13 +39,25 @@ class LayersEditor(TraitsEditor):
     # 'LayersEditor' interface.
     ###########################################################################
 
-    def edit_weights(self, layer, row, col, style=None):
-        style = style or 'heat'
-        W = self.machine.G[layer]
-        w = W[row * self.layer_shapes[layer][0] + col]
-        w = w.reshape(self.layer_shapes[layer+1])
+    def edit_weights(self, layer, row, col, model='generative', style='heat'):
+        if model == 'generative':
+            weights = self.machine.G
+            shapes = self.layer_shapes
+        elif model == 'recognition':
+            layer = len(self.machine.topology) - layer - 1
+            weights = self.machine.R
+            shapes = self.layer_shapes[::-1]
+        else:
+            raise ValueError('Unknown model type %r' % model)
+        if layer == len(weights):
+            return
 
-        name = 'Layer {}, Unit ({},{})'.format(layer+1, row+1, col+1)
+        W = weights[layer]
+        w = W[row * shapes[layer][0] + col]
+        w = w.reshape(shapes[layer+1])
+
+        name = '{} Layer {}, Unit ({},{})'.format(
+            model.capitalize(), layer+1, row+1, col+1)
         title = '{} - {}'.format(self.name, name)
         editor = WeightsEditor(obj=w, name=name, style=style, title=title)
         self.editor_area.add_editor(editor)
@@ -77,7 +90,9 @@ class LayersEditor(TraitsEditor):
     #### Trait change handlers ################################################
 
     def _activated_fired(self, idx):
-        self.edit_weights(*idx, style=self.weights_plot_style)
+        self.edit_weights(*idx,
+                          model = self.weights_model,
+                          style = self.weights_style)
 
     def _layer_shapes_changed(self):
         plot = self.plot

@@ -3,7 +3,7 @@ import os.path
 
 # System library imports.
 from pyface.api import FileDialog, OK
-from pyface.tasks.action.api import SGroup, SMenu, SMenuBar, TaskAction
+from pyface.tasks.action.api import SMenu, SMenuBar, EditorAction, TaskAction
 from pyface.tasks.api import Task, TaskLayout, PaneItem, VSplitter, \
     AdvancedEditorAreaPane, IEditorAreaPane, TraitsDockPane
 from traits.api import Bool, Button, DelegatesTo, Enum, Instance, Property
@@ -28,6 +28,9 @@ class HelmholtzVisTask(Task):
         SMenu(TaskAction(name = '&Open',
                          method = 'open',
                          accelerator = 'Ctrl+O'),
+              EditorAction(name = '&Close',
+                           method = 'close',
+                           accelerator = 'Ctrl+W'),
               id='File', name='&File'),
         SMenu(id='View', name='&View'))
 
@@ -120,19 +123,25 @@ class ToolsPane(TraitsDockPane):
     active_editor = Property(depends_on='task.editor_area.active_editor')
 
     def default_traits_view(self):
+        model_editor = EnumEditor(values = {'generative': 'Generative',
+                                            'recognition': 'Recognition'})
+        style_editor = EnumEditor(values = {'heat': 'Heat map',
+                                            'hinton': 'Hinton diagram'})
         tool_editor = ImageEnumEditor(values = {'activate': 'search',
                                                 'toggle': 'pencil'},
                                       cols = 4,
                                       klass = ToolsPane)
-        style_editor = EnumEditor(values = {'heat': 'Heat map',
-                                            'hinton': 'Hinton diagram'})
         shapes_editor = TabularEditor(adapter = LayerShapesAdapter(),
                                       operations = ['edit'])
         view = View(VGroup(Item('tool',
                                 editor = tool_editor,
                                 style = 'custom'),
+                           HGroup(Label('Inspector model:'),
+                                  Item('weights_model',
+                                       editor = model_editor,
+                                       show_label = False)),
                            HGroup(Label('Inspector style:'),
-                                  Item('weights_plot_style',
+                                  Item('weights_style',
                                        editor = style_editor,
                                        show_label = False)),
                            Label('Layer shapes:'),
@@ -157,8 +166,13 @@ class LayerShapesAdapter(TabularAdapter):
     alignment = 'right'
 
     def _set_text(self, value):
-        value = int(value)
         machine = self.object.machine
+        try:
+            value = int(value)
+            assert value > 0
+        except (AssertionError, ValueError):
+            return
+
         if machine:
             size = machine.topology[self.row]
             if size % value == 0:

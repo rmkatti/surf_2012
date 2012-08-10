@@ -1,14 +1,30 @@
+from __future__ import print_function
+
 # Standard library imports.
 import logging
+import sys
 
 # System library imports.
-from envisage.ui.tasks.api import TasksApplication
+from traits.etsconfig.api import ETSConfig
 from pyface.tasks.api import TaskWindowLayout
+from envisage.ui.tasks.api import TasksApplication
 
 # Plugin imports.
 from envisage.core_plugin import CorePlugin
 from envisage.ui.tasks.tasks_plugin import TasksPlugin
 from plugin import HelmholtzVisPlugin
+
+# XXX: Hide warnings from Qt about setting negative sizes. These are harmless
+# and I don't have time to track them down.
+if ETSConfig.toolkit == 'qt4':
+
+    def warning_filter(msg_type, msg):
+        if msg_type == QtCore.QtWarningMsg and 'negative size' in msg.lower():
+            return
+        print(msg, file=sys.stderr)
+
+    from pyface.qt import QtCore
+    QtCore.qInstallMsgHandler(warning_filter)
 
 
 class HelmholtzVisApplication(TasksApplication):
@@ -41,5 +57,4 @@ def main(argv):
 
 
 if __name__ == '__main__':
-    import sys
     main(sys.argv)
