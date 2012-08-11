@@ -56,13 +56,10 @@ def estimate_most_probable(machine, n=10):
     return zip(samples[idx[:n]], probs[idx[:n]])
 
 def main(args = None):
-    from neural.ui.api import HelmholtzVis
-
     runner = ShifterRunner()
     runner.main(args=args)
-    machine = runner.machine
-    
-    for sample, prob in estimate_most_probable(machine):
+
+    for sample, prob in estimate_most_probable(runner.machine):
         print sample.reshape(4, runner.bits), prob
 
 
