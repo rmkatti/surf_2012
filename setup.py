@@ -7,6 +7,10 @@ setup(
     version = '0.1',
     cmdclass = {'build_ext': build_ext},
     packages = find_packages(),
+    package_data = {
+        # Will only be included if present. Convenient for freezing.
+        'neural_experiments.digits': ['data/*'],
+    },
     ext_modules = [
         Extension('neural.external.tokyo',
                   ['neural/external/tokyo.pyx'],

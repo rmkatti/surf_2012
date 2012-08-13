@@ -4,7 +4,7 @@ from traits.api import Any, Dict, File, Float, Instance, Int, List, Str, Type
 
 # Local imports.
 from neural.runner.api import Runner, SupervisedNeuralRunner
-from mnist import binarize_mnist_images, read_mnist
+from neural_experiments.digits.mnist import binarize_mnist_images, read_mnist
 
 
 class GridSearchRunner(Runner):
@@ -48,7 +48,7 @@ class GridSearchRunner(Runner):
         self.best_score = gs.best_score_
                          
     def _base_runner_default(self):
-        from supervised import SupervisedDigitsRunner
+        from neural_experiments.digits.supervised import SupervisedDigitsRunner
         return SupervisedDigitsRunner(cls=self.cls, cls_args=self.cls_args)
 
     def _cls_default(self):
