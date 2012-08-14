@@ -4,8 +4,9 @@ from bbfreeze.freezer import Freezer, SharedLibrary
 from bbfreeze.getdeps import getDependencies
 import bbfreeze.recipes
 
-includes = []
-excludes = ['ets', 'etsdevtools', 'PIL', 'PyQt4', 'PySide', 'sip', 'wx']
+includes = [ 'neural.api', 'neural_experiments.digits.api' ]
+excludes = [ 'apptools', 'ets', 'etsdevtools', 'pyface', 'PIL', 
+             'PyQt4', 'PySide', 'sip', 'wx' ]
 
 # Include MKL shared libraries that cannot be detected automatically.
 try:
@@ -30,7 +31,5 @@ else:
     bbfreeze.recipes.recipe_mkl = recipe_mkl
 
 freezer = Freezer('neural-0.1', includes=includes, excludes=excludes)
-freezer.addScript('neural_experiments/digits/grid_search.py')
-#freezer.addScript('neural_experiments/digits/supervised.py')
-#freezer.addScript('neural_experiments/digits/unsupervised.py')
+freezer.addScript('runner.py')
 freezer()

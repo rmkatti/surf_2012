@@ -5,7 +5,7 @@ from traits.api import Any, File, Int, List
 # Local imports.
 from neural.api import HelmholtzMachine
 from neural.runner.api import NeuralRunner
-from neural_experiments.digits.mnist import binarize_mnist_images, read_mnist
+from mnist import binarize_mnist_images, read_mnist
 
 
 class UnsupervisedDigitsRunner(NeuralRunner):
