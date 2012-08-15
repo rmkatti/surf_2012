@@ -96,14 +96,14 @@ class HelmholtzMachine(object):
                 rate = rate_0 / (1.0 + anneal * epoch)
 
     def estimate_coding_cost(self, d, n = 10):
-        """ Estimate the expected coding cost of the data d by sampling the
-        recognition distribution.
+        """ Estimate the expected coding cost (in bits) of the given data by
+        sampling the recognition distribution.
         """
         samples = self.sample_recognition_dist(d, size=n)
         probs = self._generative_probs_for_sample(samples)
         costs = np.zeros(n)
         for s, prob in izip(samples, probs):
-            costs += np.sum(-s*np.log(prob) - (1-s)*np.log(1-prob), axis=1)
+            costs += np.sum(-s*np.log2(prob) - (1-s)*np.log2(1-prob), axis=1)
         return costs.mean()
         
     def estimate_generative_dist(self, n = 10000):

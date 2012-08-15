@@ -35,11 +35,10 @@ class NeuralRunner(Runner):
                              epochs = self.epochs, **kwds)
 
 
-class SupervisedNeuralRunner(NeuralRunner):
-    """ A runner class for supervised learning with neural networks.
+class EstimatorNeuralRunner(NeuralRunner):
+    """ A NeuralRunner that implements the scikit-learn 'estimator' interface.
 
-    For convenience, this class implements the scikits-learn supervised
-    'estimator' interface. This permits the use of model selection tools like
+    This permits the runner to be use with model selection tools like
     sklearn.grid_search.
     """
 

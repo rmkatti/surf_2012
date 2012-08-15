@@ -3,12 +3,12 @@ from sklearn.grid_search import GridSearchCV
 from traits.api import Any, Dict, File, Float, Instance, Int, List, Str, Type
 
 # Local imports.
-from neural.runner.api import Runner, SupervisedNeuralRunner
+from neural.runner.api import Runner, EstimatorNeuralRunner
 from mnist import binarize_mnist_images, read_mnist
 
 
 class GridSearchRunner(Runner):
-    """ Grid search on the hyperparameters of the supervised digits classifier.
+    """ Grid search on the hyperparameters of the digits networks.
     """
 
     # Configuration.
@@ -27,7 +27,7 @@ class GridSearchRunner(Runner):
                           "values to search")
 
     # Runtime.
-    base_runner = Instance(SupervisedNeuralRunner)
+    base_runner = Instance(EstimatorNeuralRunner)
 
     # Results.
     param_scores = List

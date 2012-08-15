@@ -7,11 +7,11 @@ from traits.api import Any, Dict, Float, File, Int, List
 
 # Local imports.
 from neural.api import HelmholtzMachine
-from neural.runner.api import SupervisedNeuralRunner
+from neural.runner.api import EstimatorNeuralRunner
 from mnist import binarize_mnist_images, read_mnist
 
 
-class SupervisedDigitsRunner(SupervisedNeuralRunner):
+class SupervisedDigitsRunner(EstimatorNeuralRunner):
     
     # NeuralRunner configuration.
     cls = HelmholtzMachine
@@ -43,7 +43,7 @@ class SupervisedDigitsRunner(SupervisedNeuralRunner):
         predicted = self.predict(imgs)
         self.error_rate = np.sum(predicted != labels) / float(len(imgs))
 
-    # SupervisedNeuralRunner interface.
+    # EstimatorNeuralRunner interface.
 
     def fit(self, imgs, labels):
         self.machines = {}
