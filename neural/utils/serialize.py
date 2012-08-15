@@ -38,12 +38,18 @@ def save(filename, obj):
         return fh.write(encode(obj))
 
 class Pickler(jsonpickle.Pickler):
-    """ A Pickler that properly supports TraitsDict.
+    """ A Pickler with fixes for NumPy and Traits.
     """
     def flatten(self, obj):
+        # Handle numpy scalar types.
+        if isinstance(obj, np.generic):
+            return np.asscalar(obj)
+
+        # Handle dict sub-classes (e.g. TraitsDict).
         if jsonpickle.util.is_dictionary(obj):
             self._push()
             return self._pop(self._flatten_dict_obj(obj, dict()))
+
         return super(Pickler, self).flatten(obj)
 
 Unpickler = jsonpickle.Unpickler

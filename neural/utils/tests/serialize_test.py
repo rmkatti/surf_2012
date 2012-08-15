@@ -11,3 +11,7 @@ def test_serialize_array():
     y = decode(encode(x))
     assert_equal(x, y)
     assert_equal(x.dtype, y.dtype)
+
+def test_serialize_scalar():
+    assert_equal(encode(np.float64(1)), '1.0')
+    assert_equal(encode(np.uint32(1)), '1')
