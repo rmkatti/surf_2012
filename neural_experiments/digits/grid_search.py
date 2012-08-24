@@ -20,7 +20,7 @@ class GridSearchRunner(Runner):
     data_path = File(config=True, transient=True,
                      desc="path to MNIST data files")
 
-    cv = Int(3, config=True, desc="number of folds for cross-validation")
+    cv = Int(5, config=True, desc="number of folds for cross-validation")
     jobs = Int(1, config=True, desc="number of jobs to run in parallel")
     param_grid = Dict(Str, List, config=True,
                       desc="mapping from hyperparameter names to lists of " \

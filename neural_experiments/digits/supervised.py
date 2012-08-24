@@ -16,8 +16,7 @@ class SupervisedDigitsRunner(EstimatorNeuralRunner):
     # NeuralRunner configuration.
     cls = HelmholtzMachine
     topology = [16, 64, 64, 28*28]
-    rate = 0.1
-    anneal = 1.0
+    rate = 0.01
     epochs = 10
 
     # SupervisedDigitsRunner configuration.
