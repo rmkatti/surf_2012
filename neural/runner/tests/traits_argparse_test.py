@@ -1,12 +1,12 @@
 # System library imports.
 import numpy as np
-from numpy.testing import assert_equal
-from traits.api import HasTraits, Array, Dict, Either, Float, Int, List, Str, \
-    Type
+from numpy.testing import assert_equal, assert_raises
+from traits.api import HasTraits, Array, Dict, Enum, Either, Float, Int, \
+    List, Str, Type
 
 # Local imports.
 from neural.runner.traits_argparse import parse_array, parse_compound, \
-    parse_dict, parse_import, parse_list
+    parse_dict, parse_enum, parse_import, parse_list
 
 
 def test_nested_sequence():
@@ -46,6 +46,13 @@ def test_parse_dict():
                parse_dict(trait, '{foo=1, bar=2}'),
                parse_dict(trait, 'foo:1,bar:2') ]:
         assert_equal(x, y)
+
+def test_parse_enum():
+    trait = Enum('foo', 'bar', 'baz')
+    assert_equal('foo', parse_enum(trait, 'foo'))
+    assert_equal('foo', parse_enum(trait, 'f'))
+    assert_raises(ValueError, parse_enum, trait, 'biz')
+    assert_raises(ValueError, parse_enum, trait, 'ba')
 
 def test_parse_import():
     import datetime

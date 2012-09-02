@@ -79,6 +79,13 @@ def parse_dict(trait, value):
         items[parse_key(key_trait, key)] = parse_val(val_trait, val)
     return items
 
+def parse_enum(trait, value):
+    values = get_trait_type(trait).values
+    candidates = filter(lambda x: x.startswith(value), values)
+    if len(candidates) == 1:
+        return candidates[0]
+    raise ValueError('%r must identify one of %r' % (value, values))
+
 def parse_import(trait, value):
     split = value.rsplit('.', 1)
     if len(split) == 2:
@@ -170,7 +177,7 @@ class ParserRegistry(HasTraits):
             del self._map[cls]
 
 from traits.api import Any, Array, BaseBool, BaseFile, BaseFloat, BaseInt, \
-    BaseLong, BaseStr, BaseUnicode, Dict, List, TraitCompound, Type
+    BaseLong, BaseStr, BaseUnicode, Dict, Enum, List, TraitCompound, Type
 
 parser_registry = ParserRegistry()
 parser_registry.add(Any, make_parse(eval))
@@ -183,6 +190,7 @@ parser_registry.add(BaseLong, make_parse(long))
 parser_registry.add(BaseStr, null_parse)
 parser_registry.add(BaseUnicode, null_parse)
 parser_registry.add(Dict, parse_dict)
+parser_registry.add(Enum, parse_enum)
 parser_registry.add(List, parse_list)
 parser_registry.add(TraitCompound, parse_compound)
 parser_registry.add(Type, parse_import)
