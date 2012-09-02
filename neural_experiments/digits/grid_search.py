@@ -1,6 +1,7 @@
 # System library imports.
 from sklearn.grid_search import GridSearchCV
-from traits.api import Any, Dict, File, Float, Instance, Int, List, Str, Type
+from traits.api import Any, Dict, Enum, File, Float, Instance, Int, List, \
+    Str, Type
 
 # Local imports.
 from neural.runner.api import Runner, EstimatorNeuralRunner
@@ -19,6 +20,8 @@ class GridSearchRunner(Runner):
                     desc="optional keyword arguments for the class constructor")
     data_path = File(config=True, transient=True,
                      desc="path to MNIST data files")
+    runner = Enum('supervised', 'unsupervised', config=True,
+                  desc="the kind of runner to use (supervised or unsupervised)")
 
     cv = Int(5, config=True, desc="number of folds for cross-validation")
     jobs = Int(1, config=True, desc="number of jobs to run in parallel")
@@ -48,8 +51,11 @@ class GridSearchRunner(Runner):
         self.best_score = gs.best_score_
                          
     def _base_runner_default(self):
-        from supervised import SupervisedDigitsRunner
-        return SupervisedDigitsRunner(cls=self.cls, cls_args=self.cls_args)
+        if self.runner == 'supervised':
+            from supervised import SupervisedDigitsRunner as runner_factory
+        else:
+            from unsupervised import UnsupervisedDigitsRunner as runner_factory
+        return runner_factory(cls=self.cls, cls_args=self.cls_args)
 
     def _cls_default(self):
         from neural.api import HelmholtzMachine
