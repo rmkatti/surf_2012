@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 
 # Standard library imports.
-from cStringIO import StringIO
+from StringIO import StringIO # cStringIO does not support Unicode
 from io import IOBase
 import os.path
 import sys

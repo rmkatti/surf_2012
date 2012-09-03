@@ -11,21 +11,39 @@ from traits.api import CTrait, HasTraits, Callable, Dict, Type
 
 # Dynamic ArgumentParser construction.
 
-def add_config_arguments(parser, config_obj):
+def add_config_arguments(parser, config_obj, exclude=[]):
     """ Dynamically construct an ArgumentParser for a HasTraits object.
+
+    The following Trait metadata is inspected:
+
+        'config' : If true, an argument is added for the trait (unless the trait
+        name is in 'exclude')
+
+        'config_required' : Normally, config arguments are added as optional
+        arguments. If set, the argument is mandatory and hence added as a
+        positional argument.
+
+        'config_default_module' : For import traits only. Optional.
     """
     parser.config_obj = config_obj
 
     traits = config_obj.traits(config=True)
     names = sorted(traits.iterkeys())
     for name in names:
+        if name in exclude:
+            continue
+
         trait = traits[name]
         parse = trait.config_parse
         if parse is None:
             parse = parser_registry.lookup(trait)
-       
-        arg_name = '--' + name.replace('_', '-')
-        action = parser.add_argument(arg_name, help=trait.desc, 
+
+        if trait.config_required:
+            arg_name = name
+        else:
+            arg_name = '--' + name.replace('_', '-')
+        metavar = name.upper().replace('_', '-')
+        action = parser.add_argument(arg_name, metavar=metavar, help=trait.desc,
                                      action=TraitsConfigAction)
         action.parse, action.trait = parse, trait
 

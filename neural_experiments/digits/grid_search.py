@@ -9,7 +9,8 @@ from mnist import binarize_mnist_images, read_mnist
 
 
 class GridSearchRunner(Runner):
-    """ Grid search on the hyperparameters of the digits networks.
+    """ A meta-runner for grid searching the hyperparameter space of the digits
+    runners.
     """
 
     # Configuration.

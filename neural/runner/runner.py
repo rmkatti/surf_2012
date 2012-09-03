@@ -30,17 +30,12 @@ class Runner(HasTraits):
     def main(self, args = None):
         """ Convenience 'main' method to execute the runner.
         """
-        # Parse commandline arguments. Special case verbosity flag to permit
-        # counting.
-        parser = argparse.ArgumentParser()
-        parser.add_argument('-v', '--verbose', action='count', default=0,
-                            help='verbosity level')
-        traits_argparse.add_config_arguments(parser, self)
-        namespace = parser.parse_args(args)
-        self.verbose = namespace.verbose
+        self.parse_args(args)
 
-        # Execute the runner, saving output if necessary.
-        self.start()
+        with redirect_output(echo=True) as io:
+            self.start()
+
+        self.output = io.getvalue()
         if self.outfile:
             self.save()
 
@@ -51,17 +46,26 @@ class Runner(HasTraits):
         """
         self.start_time = datetime.datetime.now()
         try:
-            with redirect_output(echo=True) as io:
-                return self.run()
+            return self.run()
         finally:
             self.end_time = datetime.datetime.now()
             self.duration = (self.end_time - self.start_time).total_seconds()
-            self.output = io.getvalue()
 
     def run(self):
         """ Abstract method. Should be implemented by subclasses.
         """
         pass
+
+    def parse_args(self, args = None):
+        """ Parse commandline arguments and update configurable traits.
+        """
+        # Special case verbosity flag to permit counting.
+        parser = argparse.ArgumentParser()
+        parser.add_argument('-v', '--verbose', action='count', default=0,
+                            help='verbosity level')
+        traits_argparse.add_config_arguments(parser, self)
+        namespace = parser.parse_args(args)
+        self.verbose = namespace.verbose
 
     def save(self, filename = None):
         """ Convenience method to save the Runner using neural.serialize.
