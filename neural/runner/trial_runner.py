@@ -10,6 +10,7 @@ from traits.api import Dict, Float, Instance, Int, List, Str, Type
 # Local imports.
 from runner import Runner
 import traits_argparse
+from traits_argparse import is_number_trait
 
 
 class TrialRunner(Runner):
@@ -72,6 +73,11 @@ class TrialRunner(Runner):
         traits_argparse.add_config_arguments(parser, self.base_runner, 
                                              exclude=['outfile'])
         parser.parse_args(namespace.runner_args)
+
+        # Validate TrialRunner and sub-Runner argument compatibility.
+        for name in self.stats:
+            if not is_number_trait(self.base_runner.trait(name)):
+                raise ValueError('%r is not a numeric attribute' % name)
 
     # TrialRunner interface
 

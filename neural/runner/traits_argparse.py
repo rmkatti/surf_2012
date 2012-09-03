@@ -7,9 +7,10 @@ import sys
 
 # System library imports.
 import numpy as np
-from traits.api import CTrait, HasTraits, Callable, Dict, Type
+from traits.api import BaseComplex, BaseFloat, BaseInt, BaseLong, CTrait, \
+    HasTraits, Callable, Dict, Type
 
-# Dynamic ArgumentParser construction.
+# Core traits_argparse API.
 
 def add_config_arguments(parser, config_obj, exclude=[]):
     """ Dynamically construct an ArgumentParser for a HasTraits object.
@@ -44,12 +45,12 @@ def add_config_arguments(parser, config_obj, exclude=[]):
             arg_name = '--' + name.replace('_', '-')
         metavar = name.upper().replace('_', '-')
         action = parser.add_argument(arg_name, metavar=metavar, help=trait.desc,
-                                     action=TraitsConfigAction)
+                                     action=_TraitsConfigAction)
         action.parse, action.trait = parse, trait
 
     return parser
         
-class TraitsConfigAction(argparse.Action):
+class _TraitsConfigAction(argparse.Action):
 
     def __call__(self, parser, namespace, value, option_string=None):
         try:
@@ -57,6 +58,21 @@ class TraitsConfigAction(argparse.Action):
             setattr(parser.config_obj, self.dest, value)
         except Exception as exc:
             raise argparse.ArgumentError(self, str(exc))
+
+# Utility functions.
+
+def get_trait_type(trait):
+    """ Returns the Python-level TraitType for the given trait.
+    """
+    if isinstance(trait, CTrait):
+        return trait.trait_type
+    return trait
+
+def is_number_trait(trait):
+    """ Returns whether the given trait is a number type.
+    """
+    return isinstance(get_trait_type(trait), 
+                      (BaseComplex, BaseFloat, BaseInt, BaseLong))
 
 # Built-in string->value parsers.
 
@@ -170,11 +186,6 @@ def _parse_sequence(value):
     return items
 
 # The string->value parser registry.
-
-def get_trait_type(trait):
-    if isinstance(trait, CTrait):
-        return trait.trait_type
-    return trait
 
 class ParserRegistry(HasTraits):
 
