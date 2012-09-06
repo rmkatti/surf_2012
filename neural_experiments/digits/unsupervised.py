@@ -33,7 +33,7 @@ class UnsupervisedDigitsRunner(EstimatorNeuralRunner):
 
         imgs, labels = read_mnist(path=self.data_path, training=False)
         imgs = binarize_mnist_images(imgs)
-        self.coding_cost = self.score(imgs, labels)
+        self.coding_cost = -self.score(imgs, labels)
 
     # EstimatorNeuralRunner interface.
 
@@ -47,7 +47,7 @@ class UnsupervisedDigitsRunner(EstimatorNeuralRunner):
         machine = self.machine
         costs = np.array([ machine.estimate_coding_cost(img, n=10) 
                            for img in imgs[idx] ])
-        return costs.mean()
+        return -costs.mean()
 
 
 def main(args = None):
