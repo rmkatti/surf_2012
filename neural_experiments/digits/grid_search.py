@@ -78,7 +78,7 @@ def main(args = None):
     runner = GridSearchRunner()
     runner.main(args=args)
     print 'Best parameters = {}'.format(runner.best_params)
-    print 'Best error rate = {:%}'.format(1.0 - runner.best_score)
+    print 'Best score = {}'.format(runner.best_score)
 
 if __name__ == '__main__':
     main()
