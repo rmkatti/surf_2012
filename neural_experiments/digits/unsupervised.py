@@ -24,7 +24,7 @@ class UnsupervisedDigitsRunner(EstimatorNeuralRunner):
     coding_cost = Float
     machine = Any
 
-    # NeuralRunner interface.
+    # Runner interface.
 
     def run(self):
         imgs, labels = read_mnist(path=self.data_path, training=True)

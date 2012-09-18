@@ -27,7 +27,7 @@ class SupervisedDigitsRunner(EstimatorNeuralRunner):
     error_rate = Float
     machines = Dict(Int, Any, transient=True)
 
-    # NeuralRunner interface.
+    # Runner interface.
 
     def run(self):
         # Fit training data.
