@@ -26,12 +26,16 @@ class DigitSpecificityRunner(NeuralRunner):
 
     # Results.
     dists = Dict(Str, Array(shape=(None,)))
-    machine = Any
+    machine = Any(transient=True)
     specificity = Float
 
     # Runner interface.
 
     def run(self):
+        # Validate settings.
+        if len(self.digits) < 2:
+            raise ValueError("Must use at least 2 digit classes")
+
         # Train the machine.
         imgs, labels = read_mnist(path=self.data_path, training=True)
         idx = np.in1d(labels, self.digits)
