@@ -2,11 +2,13 @@
 import os.path
 
 # System library imports.
-from pyface.api import FileDialog, OK
-from pyface.tasks.action.api import SMenu, SMenuBar, EditorAction, TaskAction
+from pyface.api import FileDialog, MessageDialog, OK
+from pyface.tasks.action.api import SGroup, SMenu, SMenuBar, \
+    EditorAction, TaskAction
 from pyface.tasks.api import Task, TaskLayout, PaneItem, VSplitter, \
     AdvancedEditorAreaPane, IEditorAreaPane, TraitsDockPane
-from traits.api import Bool, Button, DelegatesTo, Enum, Instance, Property
+from traits.api import Bool, Button, DelegatesTo, Directory, Enum, Instance, \
+    Property
 from traitsui.api import View, HGroup, VGroup, Item, Label, EnumEditor, \
     ImageEnumEditor, InstanceEditor, TabularEditor, spring
 from traitsui.tabular_adapter import TabularAdapter
@@ -25,17 +27,25 @@ class HelmholtzVisTask(Task):
     name = 'Helmholtz Machine Visualization'
 
     menu_bar = SMenuBar(
-        SMenu(TaskAction(name = '&Open',
-                         method = 'open',
-                         accelerator = 'Ctrl+O'),
-              EditorAction(name = '&Close',
-                           method = 'close',
-                           accelerator = 'Ctrl+W'),
+        SMenu(SGroup(TaskAction(name = '&Open',
+                                method = 'open',
+                                accelerator = 'Ctrl+O'),
+                     id='OpenGroup'),
+              SGroup(TaskAction(name = '&Save Image',
+                                method = 'save',
+                                accelerator = 'Ctrl+S',
+                                enabled_name = 'editor_area.active_editor'),
+                     id='SaveGroup'),
+              SGroup(EditorAction(name = '&Close',
+                                  method = 'close',
+                                  accelerator = 'Ctrl+W'),
+                     id='ExitGroup'),
               id='File', name='&File'),
         SMenu(id='View', name='&View'))
 
     #### 'HelmholtzVisTask' interface #########################################
     
+    default_directory = Directory
     editor_area = Instance(IEditorAreaPane)
 
     ###########################################################################
@@ -56,20 +66,49 @@ class HelmholtzVisTask(Task):
     ###########################################################################
 
     def open(self):
+        wildcard = FileDialog.create_wildcard('JSON files', '*.json')
         dialog = FileDialog(action = 'open',
-                            default_directory = os.path.expanduser('~'),
+                            default_directory = self.default_directory,
                             parent = self.window.control,
-                            wildcard = 'JSON files (*.json)|*.json|')
+                            wildcard = wildcard)
         if dialog.open() == OK:
             runner = load(dialog.path)
             runner.outfile = dialog.path
             self.editor_area.edit(runner)
+
+    def save(self):
+        extensions = [ '*.bmp', '*.gif', '*.jpg', '*.pdf',
+                       '*.png', '*.svg', '*.tif', '*.xbm' ]
+        wildcard = FileDialog.create_wildcard('From file name', extensions)
+        dialog = FileDialog(action = 'save as',
+                            default_directory = self.default_directory,
+                            parent = self.window.control,
+                            wildcard = wildcard)
+        if dialog.open() == OK:
+            filename = dialog.path
+            extension = os.path.splitext(filename)[1]
+            if not extension:
+                extension = '.png'
+                filename += extension
+            try:
+                self.editor_area.active_editor.save(filename)
+            except Exception as exc:
+                msg = 'Failed to save image in %s format' % extension.upper()
+                dialog = MessageDialog(title = 'Error saving',
+                                       message = msg,
+                                       detail = str(exc),
+                                       parent = self.window.control,
+                                       severity = 'error')
+                dialog.open()
 
     ###########################################################################
     # Protected interface.
     ###########################################################################
 
     #### Trait initializers ###################################################
+
+    def _default_directory_default(self):
+        return os.path.expanduser('~')
 
     def _default_layout_default(self):
         return TaskLayout(

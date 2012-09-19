@@ -8,9 +8,8 @@ from traits.api import Any, Array, Bool, DelegatesTo, Enum, Instance, Unicode
 from traitsui.api import View, Item, InstanceEditor
 
 # Local imports
-from neural.helmholtz import HelmholtzMachine
 from neural.runner.api import Runner
-from neural.ui.units_plot import UnitsPlot
+from neural.ui.api import UnitsPlot, save_plot
 
 
 class LayersEditor(TraitsEditor):
@@ -78,6 +77,9 @@ class LayersEditor(TraitsEditor):
             raise ValueError('Unknown model type %r' % model)
         plot.layers = map(np.reshape, layers, self.layer_shapes)
 
+    def save(self, filename):
+        return save_plot(self.plot.plot, filename)
+
     ###########################################################################
     # Protected interface.
     ###########################################################################
@@ -131,6 +133,17 @@ class WeightsEditor(TraitsEditor):
                             show_label = False,
                             style = 'custom'),
                        resizable = True)
+
+    ###########################################################################
+    # 'WeightsEditor' interface.
+    ###########################################################################
+
+    def save(self, filename):
+        if self.style == 'heat':
+            component = self.plot.container
+        elif self.style == 'hinton':
+            component = self.plot.plot
+        return save_plot(component, filename)
     
     ###########################################################################
     # Protected interface.

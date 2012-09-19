@@ -1,5 +1,6 @@
 from aspect_plot_container import HAspectPlotContainer, VAspectPlotContainer
 from hinton_plot import HintonPlot
 from hinton_plot_renderer import HintonPlotRenderer
+from save_plot import save_plot
 from units_plot import UnitsPlot
 from weights_plot import WeightsPlot
