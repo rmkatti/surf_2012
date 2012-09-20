@@ -2,28 +2,36 @@
 from chaco.api import PlotGraphicsContext
 
 
-def save_plot(plot, filename, size=None):
+def save_plot(plot, filename, bgcolor=None, size=None):
     """ Render a plot to an image on disk.
 
     The image format is determed from the given filename.
     """
+    if bgcolor is None:
+        bgcolor = plot.bgcolor
     if size is None:
         size = plot.outer_bounds
     else:
         raise NotImplementedError('Custom sizes not implemented')
 
-    if filename.endswith('.pdf'):
-        save_plot_pdf(plot, filename, size)
-    elif filename.endswith('.svg'):
-        save_plot_svg(plot, filename, size)
-    else:
-        save_plot_img(plot, filename, size)
+    old_bgcolor = plot.bgcolor
+    plot.bgcolor = bgcolor
+    try:
+        if filename.endswith('.pdf'):
+            save_plot_pdf(plot, filename, size)
+        elif filename.endswith('.svg'):
+            save_plot_svg(plot, filename, size)
+        else:
+            save_plot_img(plot, filename, size)
+    finally:
+        plot.bgcolor = old_bgcolor
 
 
 def save_plot_img(component, filename, size, dpi=72):
     gc = PlotGraphicsContext(size, dpi=dpi)
     gc.render_component(component)
     gc.save(filename)
+
         
 def save_plot_pdf(component, filename, size, dpi=72):
     from kiva.pdf import GraphicsContext
@@ -44,8 +52,10 @@ def save_plot_pdf(component, filename, size, dpi=72):
         component.use_backbuffer = old_backbuffer
     gc.save()
 
+
 def save_plot_svg(component, filename, size):
     from chaco.svg_graphics_context import SVGGraphicsContext
+
     gc = SVGGraphicsContext(size)
     gc.render_component(component)
     gc.save(filename)

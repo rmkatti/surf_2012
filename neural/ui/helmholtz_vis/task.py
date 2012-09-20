@@ -91,7 +91,8 @@ class HelmholtzVisTask(Task):
                 extension = '.png'
                 filename += extension
             try:
-                self.editor_area.active_editor.save(filename)
+                # FIXME: Expose size and background color?
+                self.editor_area.active_editor.save(filename, bgcolor='white')
             except Exception as exc:
                 msg = 'Failed to save image in %s format' % extension.upper()
                 dialog = MessageDialog(title = 'Error saving',

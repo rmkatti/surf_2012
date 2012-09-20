@@ -77,8 +77,8 @@ class LayersEditor(TraitsEditor):
             raise ValueError('Unknown model type %r' % model)
         plot.layers = map(np.reshape, layers, self.layer_shapes)
 
-    def save(self, filename):
-        return save_plot(self.plot.plot, filename)
+    def save(self, filename, bgcolor=None):
+        return save_plot(self.plot.plot, filename, bgcolor=bgcolor)
 
     ###########################################################################
     # Protected interface.
@@ -138,12 +138,12 @@ class WeightsEditor(TraitsEditor):
     # 'WeightsEditor' interface.
     ###########################################################################
 
-    def save(self, filename):
+    def save(self, filename, bgcolor=None):
         if self.style == 'heat':
             component = self.plot.container
         elif self.style == 'hinton':
             component = self.plot.plot
-        return save_plot(component, filename)
+        return save_plot(component, filename, bgcolor=bgcolor)
     
     ###########################################################################
     # Protected interface.
