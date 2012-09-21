@@ -25,7 +25,8 @@ class DigitSpecificityRunner(NeuralRunner):
     data_path = File(config=True, transient=False)
 
     # Results.
-    dists = Dict(Str, Array(shape=(None,)))
+    pattern_dist = Dict(Str, Float)
+    digit_dists = Dict(Str, Array(shape=(None,)))
     machine = Any(transient=True)
     specificity = Float
 
@@ -54,23 +55,34 @@ class DigitSpecificityRunner(NeuralRunner):
         idx = np.in1d(labels, self.digits)
         imgs, labels = imgs[idx], labels[idx]
 
-        # Compute the digit distribution for each top-level pattern.
-        self.dists = dists = {}
+        # Compute the digit counts for each top-level pattern.
+        machine = self.machine
+        sample_count = 10
+        self.digit_dists = digit_dists = {}
         for img, label in izip(imgs, labels):
-            top_samples = self.machine.sample_recognition_dist(img, size=10)[0]
-            for sample in top_samples:
-                dist = dists.setdefault(bit_vector_to_str(sample), np.zeros(10))
+            samples = machine.sample_recognition_dist(img, size=sample_count)
+            for top_sample in samples[0]:
+                pattern = bit_vector_to_str(top_sample)
+                dist = digit_dists.setdefault(pattern, np.zeros(10))
                 dist[label] += 1
-        for dist in dists.itervalues():
-            dist /= dist.sum()
+
+        # Tranform digit counts to distributions.
+        total_count = len(imgs) * sample_count
+        self.pattern_dist = pattern_dist = {}
+        for pattern, digit_dist in digit_dists.iteritems():
+            pattern_count = digit_dist.sum()
+            pattern_dist[pattern] = pattern_count / total_count
+            digit_dist /= pattern_count
 
         # Compute the normalized digit specificity score.
+        score = 0.0
         n = len(self.digits)
-        scores = np.zeros(len(dists))
-        for i, p in enumerate(dists.itervalues()):
+        for pattern, weight in pattern_dist.iteritems():
+            p = digit_dists[pattern]
             p = p[p != 0] # Set p log p = 0 when p == 0.
-            scores[i] = np.sum(p * np.log(n*p))
-        self.specificity = score = scores.mean() / np.log(n)
+            score += weight * np.sum(p * np.log(n*p))
+        score /= np.log(n)
+        self.specificity = score
         return score
 
 
