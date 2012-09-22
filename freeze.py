@@ -4,7 +4,8 @@ from bbfreeze.freezer import Freezer, SharedLibrary
 from bbfreeze.getdeps import getDependencies
 import bbfreeze.recipes
 
-includes = [ 'neural.api', 'neural_experiments.digits.api' ]
+includes = [ 'neural.api', 'neural.runner.api',
+             'neural_experiments.digits.api' ]
 excludes = [ 'apptools', 'ets', 'etsdevtools', 'pyface', 'PIL', 
              'PyQt4', 'PySide', 'sip', 'wx' ]
 
